@@ -1,0 +1,2547 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>유한대학교 웰니스스테이션 관리자</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>Chart.register(ChartDataLabels);</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+:root{
+  --bg:#f0f3f8;--surface:#fff;--surface2:#f7f9fc;--border:#e2e8f2;
+  --shadow:0 2px 12px rgba(60,80,130,.08);--shadow-md:0 4px 24px rgba(60,80,130,.13);
+  --c1:#2563eb;--c1l:#dbeafe;--c2:#f97316;--c2l:#ffedd5;
+  --c3:#10b981;--c3l:#d1fae5;--c4:#f59e0b;--c4l:#fef3c7;--c5:#8b5cf6;
+  --c1a:rgba(37,99,235,.72);--c2a:rgba(249,115,22,.72);--c3a:rgba(16,185,129,.72);--c4a:rgba(245,158,11,.72);
+  --text:#1e2d52;--text2:#4b5a7a;--muted:#94a3b8;
+  --danger:#ef4444;--accent:#e8a020;--accent2:#10b981;
+  --sw:230px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:13px;line-height:1.6;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);background:var(--c1);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.12);}
+.sb-logo .li{font-size:26px;}
+.sb-logo h2{font-size:13px;font-weight:700;color:#fff;margin-top:5px;line-height:1.4;}
+.sb-logo p{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
+.sb-badge{margin:12px 14px 0;background:rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;font-size:12px;color:rgba(255,255,255,.9);font-weight:600;text-align:center;}
+.sb-badge small{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,.55);margin-top:2px;}
+.nav-sec{padding:14px 0 8px;flex:1;overflow-y:auto;}
+.nav-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.38);letter-spacing:1.5px;padding:0 16px 7px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 16px;font-size:13px;color:rgba(255,255,255,.72);cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-weight:500;}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--c4);}
+.ni{font-size:16px;width:19px;text-align:center;}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:#fff;padding:13px 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04);position:sticky;top:0;z-index:50;}
+.topbar h1{font-size:15px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.yr-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.yr-wrap select{border:1.5px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;}
+.btn-rf{background:var(--c1l);color:var(--c1);border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-family:inherit;font-weight:600;cursor:pointer;}
+.btn-rf:hover{background:var(--c1);color:#fff;}
+.adm-badge{background:var(--c1l);color:var(--c1);font-size:12px;font-weight:700;padding:5px 11px;border-radius:20px;}
+.pc{padding:22px 26px;flex:1;}
+.page{display:none;}.page.active{display:block;animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── KPI cards ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:1200px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.g2,.g21,.g3{grid-template-columns:1fr}}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s;}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.kpi-top{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
+.kpi-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:3px;}
+.kpi-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:30px;font-weight:800;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;}
+.kpi-prog{height:4px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden;}
+.kpi-fill{height:100%;border-radius:2px;}
+
+/* ── CARD ── */
+.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;}
+.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.ct{font-size:14px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:7px;}
+.ct::before{content:'';display:inline-block;width:3px;height:14px;background:var(--c1);border-radius:2px;}
+
+/* ── CHART ── */
+.cw{position:relative;height:250px;}
+.cw-sm{position:relative;height:190px;}
+.cw-md{position:relative;height:280px;}
+.cw-lg{position:relative;height:320px;}
+
+/* ── INSIGHT ── */
+.ig{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:1100px){.ig{grid-template-columns:repeat(2,1fr)}}
+.ins{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.ins-ico{font-size:22px;margin-bottom:5px;}
+.ins-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.ins-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;}
+.ins-desc{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+.ld{width:10px;height:10px;border-radius:3px;}
+
+/* ── NOTE ── */
+.note{background:var(--c1l);border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:11px;color:#1d4ed8;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;}
+
+/* ── DR ROWS ── */
+.dr-rows{display:flex;flex-direction:column;gap:6px;margin-top:14px;}
+.dr-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);}
+.dr-lbl{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);}
+.dr-dot{width:9px;height:9px;border-radius:3px;}
+.dr-pct{font-family:monospace;font-size:11px;font-weight:600;}
+.dr-cnt{font-family:monospace;font-size:11px;color:var(--muted);}
+
+/* ── DEPT LIST ── */
+.dept-scroll{max-height:380px;overflow-y:auto;}
+.dept-scroll::-webkit-scrollbar{width:4px;}
+.dept-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.dept-row-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);}
+.dr-rank{font-family:monospace;font-size:10px;color:var(--muted);width:18px;flex-shrink:0;}
+.dr-name{flex:1;font-size:11px;color:var(--text);}
+.dr-bar{width:90px;height:6px;background:var(--border);border-radius:3px;flex-shrink:0;}
+.dr-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--c1),#60a5fa);}
+.dr-v{font-family:monospace;font-size:11px;color:var(--c1);width:34px;text-align:right;flex-shrink:0;font-weight:600;}
+.dr-u{font-family:monospace;font-size:10px;color:var(--muted);width:32px;text-align:right;flex-shrink:0;}
+
+/* ── 승인관리 ── */
+.stabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap;}
+.stab{padding:7px 15px;border:1.5px solid var(--border);background:#fff;border-radius:20px;font-size:12px;font-family:inherit;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;}
+.stab.active{background:var(--c1);color:#fff;border-color:var(--c1);}
+.stab.tp.active{background:#c07a00;border-color:#c07a00;}
+.stab.ta.active{background:#1a8a60;border-color:#1a8a60;}
+.stab.te.active{background:#2d6fae;border-color:#2d6fae;}
+.stab.tr.active{background:var(--danger);border-color:var(--danger);}
+.ts{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--surface2);color:var(--text2);font-weight:700;padding:9px 11px;text-align:left;font-size:11.5px;border-bottom:2px solid var(--border);white-space:nowrap;}
+td{padding:9px 11px;border-bottom:1px solid #eef0f5;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f8faff;}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;}
+.pending{background:#fff4e0;color:#c07a00;}.approved{background:#e0f8ef;color:#0f7a50;}
+.exited{background:#e0ecf8;color:#1a4b7a;}.rejected{background:#fde8e8;color:#c02020;}
+.btn-sm{padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;}
+.btn-sm:hover{opacity:.8;}
+.btn-approve{background:var(--accent2);color:#fff;}.btn-reject{background:#ddd;color:var(--muted);}
+.btn-delete{background:var(--danger);color:#fff;}.btn-exit{background:var(--c1);color:#fff;}
+.id-badge{font-family:monospace;font-size:11.5px;background:var(--c1l);color:var(--c1);border-radius:5px;padding:2px 6px;font-weight:700;white-space:nowrap;}
+.fac-tag{display:inline-block;background:var(--c1l);color:var(--c1);font-size:11px;font-weight:600;border-radius:6px;padding:2px 6px;margin:1px 2px;}
+.appr-f{background:var(--surface2);border-radius:10px;padding:13px 15px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:9px;align-items:center;border:1px solid var(--border);}
+.appr-f input[type=date],.appr-f select,.appr-f input[type=text]{border:1.5px solid var(--border);border-radius:8px;padding:6px 9px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;}
+.btn-f{background:var(--c1);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-family:inherit;font-weight:600;cursor:pointer;}
+.btn-r{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);border-radius:8px;padding:6px 11px;font-size:12px;font-family:inherit;cursor:pointer;}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px;}
+.emo{font-size:36px;margin-bottom:8px;}
+
+/* ── DD TABLE ── */
+.dd-table{width:100%;border-collapse:collapse;font-size:12px;}
+.dd-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap;background:var(--surface2);cursor:pointer;user-select:none;}
+.dd-table th:hover{color:var(--c1);}
+.dd-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.dd-table tbody tr:hover td{background:var(--surface2);}
+.dd-table tfoot td{padding:10px 12px;font-weight:700;color:var(--c1);background:var(--c1l);border-top:2px solid var(--c1);}
+.dd-num{font-family:monospace;text-align:right;}
+.dd-ratio-bar{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;min-width:80px;}
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;box-shadow:var(--shadow);}
+.filter-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;}
+.filter-btn:hover,.filter-btn.on{border-color:var(--c1);background:var(--c1l);color:var(--c1);font-weight:700;}
+.search-box{padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;width:150px;outline:none;}
+.search-box:focus{border-color:var(--c1);}
+
+/* ── MODAL ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center;}
+.mo.active{display:flex;}
+.mb{background:#fff;border-radius:18px;padding:28px 26px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.mb h3{font-size:16px;font-weight:700;margin-bottom:9px;color:var(--danger);}
+.mb p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+.ma{display:flex;gap:9px;}
+.ma button{flex:1;padding:11px;border-radius:8px;border:none;font-size:14px;font-family:inherit;font-weight:700;cursor:pointer;}
+.btn-cx{background:var(--bg);color:var(--muted);}.btn-ok{background:var(--danger);color:#fff;}
+.ef label{font-size:13px;font-weight:600;margin-bottom:6px;display:block;color:var(--muted);text-align:left;}
+.ef input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:15px;font-family:inherit;margin-bottom:16px;}
+
+/* ── SCROLL ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── 인쇄 전용 ── */
+@media print {
+  @page { size: A4 landscape; margin: 10mm 12mm; }
+  .sidebar, .topbar, .print-btn-wrap, .appr-f, .stabs, .filter-bar,
+  #sd-series-btns, .mo, button { display: none !important; }
+  body { background: #fff !important; margin: 0; }
+  .main { margin-left: 0 !important; }
+  .pc { padding: 0 !important; }
+  .page { display: none !important; }
+  .page.print-target { display: block !important; }
+  .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 10px; }
+  .kpi { box-shadow: none !important; border: 1px solid #ddd !important; }
+  .g4 { grid-template-columns: repeat(4,1fr) !important; }
+  .g2 { grid-template-columns: 1fr 1fr !important; }
+  .g21 { grid-template-columns: 2fr 1fr !important; }
+  .ig { grid-template-columns: repeat(4,1fr) !important; }
+  canvas { max-width: 100% !important; }
+  .print-header { display: block !important; }
+  .cw { height: 200px !important; }
+  .cw-md { height: 220px !important; }
+  .cw-sm { height: 160px !important; }
+  .cw-lg { height: 240px !important; }
+  .dept-scroll { max-height: none !important; overflow: visible !important; }
+  .ts { overflow: visible !important; }
+  table { font-size: 10px !important; }
+  th, td { padding: 5px 7px !important; }
+}
+.print-header {
+  display: none;
+  padding: 0 0 10px;
+  border-bottom: 2px solid #1e2d52;
+  margin-bottom: 14px;
+}
+.print-header h2 { font-size: 16px; font-weight: 800; color: #1e2d52; font-family: 'Plus Jakarta Sans', sans-serif; }
+.print-header p { font-size: 10px; color: #94a3b8; margin-top: 3px; }
+.print-btn-wrap {
+  display: flex; justify-content: flex-end; margin-bottom: 14px; gap: 8px;
+}
+.print-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 9px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--text2); font-family: inherit; font-size: 12px;
+  font-weight: 700; cursor: pointer; transition: all .18s;
+}
+.print-btn:hover { background: var(--c1); color: #fff; border-color: var(--c1); }
+.print-btn-main { background: var(--c1); color: #fff; border-color: var(--c1); }
+.print-btn-main:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+@keyframes spin{to{transform:rotate(360deg);}}
+/* ── 통계 필터바 ── */
+.stat-filter-bar {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:#fff; border:1px solid var(--border); border-radius:12px;
+  padding:12px 16px; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.stat-filter-bar input[type=date],
+.stat-filter-bar select {
+  border:1.5px solid var(--border); border-radius:8px;
+  padding:6px 9px; font-size:12px; font-family:inherit;
+  color:var(--text); background:#fff;
+}
+.stat-filter-bar input[type=date]:focus,
+.stat-filter-bar select:focus { border-color:var(--c1); outline:none; }
+
+/* ── 대시보드 모드 ── */
+.dashboard-overlay {
+  display:none; position:fixed; inset:0; background:#0a0f1e; z-index:2000;
+  flex-direction:column; overflow:hidden;
+}
+.dashboard-overlay.active { display:flex; }
+.db-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 20px; background:rgba(255,255,255,.04);
+  border-bottom:1px solid rgba(255,255,255,.08); flex-shrink:0;
+}
+.db-title { color:#fff; font-size:14px; font-weight:800; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; gap:8px; }
+.db-controls { display:flex; align-items:center; gap:8px; }
+.db-btn { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.8); padding:5px 12px; border-radius:8px; font-size:12px; font-family:inherit; cursor:pointer; transition:.15s; }
+.db-btn:hover { background:rgba(255,255,255,.16); color:#fff; }
+.db-btn.active { background:var(--c1); border-color:var(--c1); color:#fff; }
+.db-body { flex:1; overflow:hidden; position:relative; }
+.db-slide { display:none; position:absolute; inset:0; padding:14px 18px; overflow-y:auto; animation:dbIn .3s ease; }
+.db-slide.active { display:grid; }
+.db-slide-1 { grid-template-columns:repeat(4,1fr); grid-template-rows:auto auto; gap:12px; align-content:start; }
+.db-slide-2 { grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto auto; gap:12px; align-content:start; }
+.db-slide-3 { grid-template-columns:1fr 1fr; grid-template-rows:auto auto; gap:12px; align-content:start; }
+.db-slide-4 { grid-template-columns:2fr 1fr; grid-template-rows:auto; gap:12px; align-content:start; }
+@keyframes dbIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+.db-card {
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09);
+  border-radius:14px; padding:14px 16px; overflow:hidden;
+}
+.db-card-span2 { grid-column: span 2; }
+.db-card-span3 { grid-column: span 3; }
+.db-card-span4 { grid-column: span 4; }
+.db-kpi-group { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; grid-column:span 4; }
+.db-kpi {
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  border-radius:12px; padding:14px 16px; text-align:center;
+}
+.db-kpi-label { font-size:10px; color:rgba(255,255,255,.45); font-weight:500; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
+.db-kpi-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:34px; font-weight:900; line-height:1; }
+.db-kpi-sub { font-size:10px; color:rgba(255,255,255,.35); margin-top:4px; }
+.db-ct { font-size:12px; font-weight:700; color:rgba(255,255,255,.75); margin-bottom:10px; font-family:'Plus Jakarta Sans',sans-serif; display:flex; align-items:center; gap:6px; }
+.db-ct::before { content:''; display:inline-block; width:3px; height:12px; background:var(--c1); border-radius:2px; }
+.db-cw { position:relative; height:180px; }
+.db-cw-lg { position:relative; height:220px; }
+.db-nav { display:flex; align-items:center; gap:6px; }
+.db-nav-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); cursor:pointer; transition:.15s; }
+.db-nav-dot.active { background:var(--c1); transform:scale(1.3); }
+.db-slide-lbl { font-size:10px; color:rgba(255,255,255,.4); }
+.db-footer { display:flex; align-items:center; justify-content:space-between; padding:8px 20px; background:rgba(255,255,255,.03); border-top:1px solid rgba(255,255,255,.07); flex-shrink:0; }
+.db-footer-info { font-size:10px; color:rgba(255,255,255,.3); }
+.db-auto-badge { font-size:10px; color:rgba(255,255,255,.4); }
+/* 대시보드 모드의 차트 색상 오버라이드 */
+.dashboard-overlay canvas { filter: none; }
+
+/* ── 학번별 통계 ── */
+.su-search-box {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--c1l); border:1.5px solid var(--c1); border-radius:14px;
+  padding:16px 20px; margin-bottom:16px;
+}
+.su-search-box input {
+  border:1.5px solid var(--border); border-radius:10px;
+  padding:9px 14px; font-size:14px; font-family:inherit;
+  color:var(--text); background:#fff; width:200px; outline:none;
+  transition:.15s;
+}
+.su-search-box input:focus { border-color:var(--c1); }
+.su-profile {
+  background:#fff; border:1px solid var(--border); border-radius:16px;
+  padding:20px; margin-bottom:14px; box-shadow:var(--shadow);
+  display:none;
+}
+.su-profile.active { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+.su-avatar {
+  width:60px; height:60px; border-radius:14px;
+  background:var(--c1l); display:flex; align-items:center; justify-content:center;
+  font-size:28px; flex-shrink:0;
+}
+.su-info { flex:1; }
+.su-name { font-size:20px; font-weight:800; color:var(--text); }
+.su-meta { font-size:12px; color:var(--muted); margin-top:3px; }
+.su-stat-row { display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; }
+.su-stat { background:var(--surface2); border-radius:10px; padding:8px 14px; text-align:center; border:1px solid var(--border); }
+.su-stat-val { font-size:20px; font-weight:800; color:var(--c1); line-height:1; }
+.su-stat-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
+.su-history { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+.su-hist-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.su-hist-row:last-child { border-bottom:none; }
+.su-empty { text-align:center; padding:50px 20px; color:var(--muted); }
+.su-empty .emo { font-size:40px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div style="padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;gap:4px;">
+  <span id="auto-refresh-badge" style="font-size:10px;color:#94a3b8;font-weight:600;"></span>
+  <button onclick="autoRefreshTimer?stopAutoRefresh():startAutoRefresh()" style="font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid #334155;background:#1e293b;color:#94a3b8;cursor:pointer;">⏸/▶</button>
+</div>
+<div class="sb-logo">
+    <div class="li">🏋️</div>
+    <h2>유한대학교<br>웰니스스테이션</h2>
+    <p>Wellness Station Admin</p>
+  </div>
+  <div class="sb-badge"><span id="sb-yr">2026학년도</span><small id="sb-rng">2026.3.1 ~ 2027.2.27</small></div>
+  <nav class="nav-sec">
+    <div class="nav-lbl">운영 관리</div>
+    <div class="nav-item" onclick="showPage('overview')"><span class="ni">📊</span>전체 현황</div>
+    <div class="nav-item active" onclick="showPage('realtime')"><span class="ni">🟢</span>실시간 이용현황</div>
+    <div class="nav-item" onclick="showPage('approval')"><span class="ni">✅</span>이용승인관리</div>
+    <div class="nav-lbl" style="margin-top:8px;">통계 분석</div>
+    <div class="nav-item" onclick="showPage('stat-summary')"><span class="ni">📈</span>종합 현황</div>
+    <div class="nav-item" onclick="showPage('stat-facility')"><span class="ni">🏟️</span>시설별 분석</div>
+    <div class="nav-item" onclick="showPage('stat-time')"><span class="ni">⏰</span>시간·요일 분석</div>
+    <div class="nav-item" onclick="showPage('stat-dept')"><span class="ni">🏫</span>학과·계열 분석</div>
+    <div class="nav-item" onclick="showPage('stat-user')"><span class="ni">👥</span>이용자 분석</div>
+    <div class="nav-item" onclick="showPage('stat-detail')"><span class="ni">📋</span>학과별 상세</div>
+    <div class="nav-item" onclick="showPage('stat-student')"><span class="ni">🔍</span>학번별 통계</div>
+    <div style="padding:12px 14px 8px;">
+      <button onclick="openDashboard()" style="width:100%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:9px;font-size:12px;font-family:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">
+        📺 대시보드 모드
+      </button>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <h1 id="pg-title">📊 전체 현황</h1>
+    <div class="tb-right">
+      <div class="yr-wrap">
+        <label>학년도</label>
+        <select id="global-year" onchange="onYearChange()">
+          <option value="2025">2025학년도</option>
+          <option value="2026" selected>2026학년도</option>
+          <option value="2027">2027학년도</option>
+        </select>
+      </div>
+      <button class="btn-rf" onclick="refreshData()">🔄 새로고침</button>
+      <div class="adm-badge">👤 관리자</div>
+    </div>
+  </div>
+  <div class="pc">
+
+    <!-- ══ 전체현황 ══ -->
+    <div class="page" id="page-overview">
+      <div class="stat-filter-bar" id="ov-filter">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);">📅 기간</span>
+        <input type="date" id="ov-from" onchange="applyStatFilter('ov')">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="ov-to" onchange="applyStatFilter('ov')">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);margin-left:8px;">🎓 학과</span>
+        <select id="ov-dept" onchange="applyStatFilter('ov')">
+          <option value="">전체 학과</option>
+        </select>
+        <select id="ov-series" onchange="applyStatFilter('ov')">
+          <option value="">전체 계열</option>
+          <option>공학</option><option>예체능</option><option>자연과학</option><option>인문사회</option>
+        </select>
+        <button class="btn-f" onclick="applyStatFilter('ov')">적용</button>
+        <button class="btn-r" onclick="resetStatFilter('ov')">초기화</button>
+      </div>
+      <div class="g4" id="ov-kpi"></div>
+      <div class="g2">
+        <div class="card"><div class="ch"><div class="ct">시설별 이용건수</div></div><div class="cw"><canvas id="ch-ov-fac"></canvas></div></div>
+        <div class="card"><div class="ch"><div class="ct">요일별 이용건수</div></div><div class="cw"><canvas id="ch-ov-day"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">학과별 이용현황</div><span style="font-size:11px;color:var(--muted)" id="ov-dept-sub"></span></div>
+        <div id="ov-dept-wrap" style="overflow-y:auto;overflow-x:hidden;max-height:600px;">
+          <canvas id="ch-ov-dept"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 이용승인관리 ══ -->
+    <div class="page active" id="page-realtime">
+  <div style="padding:24px 28px;">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">🟢 실시간 이용현황</h2>
+        <p style="font-size:12px;color:#64748b;margin:4px 0 0;" id="rt-lastupdate">로딩 중...</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:11px;color:#64748b;">기준일</span>
+        <input type="date" id="rt-date" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 10px;font-size:12px;font-family:inherit;">
+        <button onclick="loadRealtime()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">조회</button>
+      </div>
+    </div>
+    <!-- KPI -->
+    <div id="rt-kpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;"></div>
+    <!-- 시설별 카드 (코인노래방 제외 3개) -->
+    <div id="rt-fac-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;"></div>
+    <!-- 코인노래방 ROOM별 현황 -->
+    <div id="rt-room-section" style="margin-bottom:24px;"></div>
+  </div>
+</div>
+<div class="page" id="page-approval">
+      <div class="card">
+        <div class="ch"><div class="ct">이용승인관리</div></div>
+        <div class="appr-f">
+          <label style="font-size:12px;color:var(--muted);font-weight:600;">기간</label>
+          <input type="date" id="ap-from"><span style="font-size:12px;color:var(--muted)">~</span><input type="date" id="ap-to">
+          <select id="ap-fac">
+            <option value="">전체 시설</option><option>인생네컷</option><option>코인노래방</option><option>탁구장</option><option>헬스장</option>
+          </select>
+          <select id="ap-dept"><option value="">전체 학과</option></select>
+          <input type="text" id="ap-srch" placeholder="이름/학번 검색" oninput="renderApproval()" style="width:130px;">
+          <button class="btn-f" onclick="searchApproval()">검색</button>
+          <button class="btn-r" onclick="resetApprFilter()">초기화</button>
+        </div>
+        <div class="stabs">
+          <button class="stab active" onclick="setStab('all',this)">전체</button>
+          <button class="stab tp" onclick="setStab('승인대기',this)">⏳ 대기 중</button>
+          <button class="stab ta" onclick="setStab('승인완료',this)">✅ 승인됨</button>
+          <button class="stab te" onclick="setStab('퇴실완료',this)">🚪 퇴실완료</button>
+          <button class="stab tr" onclick="setStab('거부',this)">❌ 거절됨</button>
+        </div>
+        <div class="ts"><table id="tb-appr"></table></div>
+      </div>
+    </div>
+
+    <!-- ══ 종합현황 통계 ══ -->
+    <div class="page" id="page-stat-summary">
+      <div class="print-header" id="ph-stat-summary">
+        <h2>유한대학교 웰니스스테이션 — 📈 종합 현황</h2>
+        <p id="ph-sub-stat-summary"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-summary','📈 종합 현황')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="stat-filter-bar" id="ss-filter">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);">📅 기간</span>
+        <input type="date" id="ss-from">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="ss-to">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);margin-left:8px;">🎓 학과</span>
+        <select id="ss-dept">
+          <option value="">전체 학과</option>
+        </select>
+        <select id="ss-series">
+          <option value="">전체 계열</option>
+          <option>공학</option><option>예체능</option><option>자연과학</option><option>인문사회</option>
+        </select>
+        <button class="btn-f" onclick="applyStatFilter('ss')">적용</button>
+        <button class="btn-r" onclick="resetStatFilter('ss')">초기화</button>
+      </div>
+      <div class="note">💡 <div><b>집계 기준</b> — 이용건수 = 시설 선택 합계. 1명이 2개 시설 선택 시 <b>이용자 1명, 이용건수 2건</b>.</div></div>
+      <div class="g4" id="ss-kpi"></div>
+      <div class="g2">
+        <div class="card"><div class="card-title">월별 이용건수 추이</div><div class="card-sub">월별 시설 이용건수 합계</div><div class="cw-md"><canvas id="ch-ss-monthly"></canvas></div></div>
+        <div class="card"><div class="card-title">시설별 비율</div><div class="card-sub">4개 시설 이용건수 구성</div>
+          <div class="legend" id="ss-donut-legend"></div>
+          <div class="cw-sm"><canvas id="ch-ss-donut"></canvas></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card"><div class="card-title">요일별 이용건수</div><div class="card-sub">요일별 시설 이용 합계</div><div class="cw"><canvas id="ch-ss-day"></canvas></div></div>
+        <div class="card"><div class="card-title">시설별 시간대별 이용건수</div><div class="card-sub">출입 시간 기준 시설별 추이</div><div class="cw"><canvas id="ch-ss-hour-fac"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ══ 시설별 분석 ══ -->
+    <div class="page" id="page-stat-facility">
+      <div class="print-header" id="ph-stat-facility">
+        <h2>유한대학교 웰니스스테이션 — 🏟️ 시설별 분석</h2>
+        <p id="ph-sub-stat-facility"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-facility','🏟️ 시설별 분석')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="stat-filter-bar" id="sf-filter">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);">📅 기간</span>
+        <input type="date" id="sf-from">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="sf-to">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);margin-left:8px;">🎓 학과</span>
+        <select id="sf-dept">
+          <option value="">전체 학과</option>
+        </select>
+        <select id="sf-series">
+          <option value="">전체 계열</option>
+          <option>공학</option><option>예체능</option><option>자연과학</option><option>인문사회</option>
+        </select>
+        <button class="btn-f" onclick="applyStatFilter('sf')">적용</button>
+        <button class="btn-r" onclick="resetStatFilter('sf')">초기화</button>
+      </div>
+      <div class="ig" id="sf-insight"></div>
+      <div class="g2">
+        <div class="card"><div class="card-title">시설별 이용건수</div><div class="card-sub">4개 시설 이용건수 비교</div><div class="cw"><canvas id="ch-sf-bar"></canvas></div></div>
+        <div class="card"><div class="card-title">시설별 월별 추이</div><div class="card-sub">월별 시설 이용건수 변화</div><div class="cw"><canvas id="ch-sf-line"></canvas></div></div>
+      </div>
+      <div class="g2">
+        <div class="card"><div class="card-title">다중 시설 이용 현황</div><div class="card-sub">2개 이상 동시 신청 조합</div><div class="cw"><canvas id="ch-sf-multi"></canvas></div></div>
+        <div class="card"><div class="card-title">시설별 시간대별 이용건수</div><div class="card-sub">출입 시간 기준 시설별 추이 (9~18시)</div><div class="cw"><canvas id="ch-sf-hour-fac2"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ══ 시간·요일 분석 ══ -->
+    <div class="page" id="page-stat-time">
+      <div class="print-header" id="ph-stat-time">
+        <h2>유한대학교 웰니스스테이션 — ⏰ 시간·요일 분석</h2>
+        <p id="ph-sub-stat-time"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-time','⏰ 시간·요일 분석')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="stat-filter-bar" id="st-filter">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);">📅 기간</span>
+        <input type="date" id="st-from">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="st-to">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);margin-left:8px;">🎓 학과</span>
+        <select id="st-dept">
+          <option value="">전체 학과</option>
+        </select>
+        <select id="st-series">
+          <option value="">전체 계열</option>
+          <option>공학</option><option>예체능</option><option>자연과학</option><option>인문사회</option>
+        </select>
+        <button class="btn-f" onclick="applyStatFilter('st')">적용</button>
+        <button class="btn-r" onclick="resetStatFilter('st')">초기화</button>
+      </div>
+      <div class="ig" id="st-insight"></div>
+      <div class="g2">
+        <div class="card"><div class="card-title">요일×시설 이용 분포</div><div class="card-sub">요일별 시설 이용건수 (누적)</div><div class="cw-md"><canvas id="ch-st-stacked"></canvas></div></div>
+        <div class="card"><div class="card-title">시간대별 이용건수</div><div class="card-sub">출입 시간 기준</div><div class="cw-md"><canvas id="ch-st-hour"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">월별 이용 추이 (시설 구분)</div><div class="card-sub">시설별 월별 이용건수</div><div class="cw"><canvas id="ch-st-combo"></canvas></div></div>
+    </div>
+
+    <!-- ══ 학과·계열 분석 ══ -->
+    <div class="page" id="page-stat-dept">
+      <div class="print-header" id="ph-stat-dept">
+        <h2>유한대학교 웰니스스테이션 — 🏫 학과·계열 분석</h2>
+        <p id="ph-sub-stat-dept"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-dept','🏫 학과·계열 분석')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="g21">
+        <div class="card">
+          <div class="card-title">학과별 방문횟수 Top 30</div>
+          <div class="card-sub">이용자수(방문횟수) · 이용건수(시설합계)</div>
+          <div class="dept-scroll" id="dept-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">계열별 이용건수</div>
+          <div class="card-sub">학과 계열별 합계</div>
+          <div class="cw-md"><canvas id="ch-dept-series"></canvas></div>
+          <div class="dr-rows" id="series-rows"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 이용자 분석 ══ -->
+    <div class="page" id="page-stat-user">
+      <div class="print-header" id="ph-stat-user">
+        <h2>유한대학교 웰니스스테이션 — 👥 이용자 분석</h2>
+        <p id="ph-sub-stat-user"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-user','👥 이용자 분석')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="ig" id="su-insight"></div>
+      <div class="g2">
+        <div class="card"><div class="card-title">재방문 횟수 분포</div><div class="card-sub">학생별 방문 횟수 분포</div><div class="cw"><canvas id="ch-su-revisit"></canvas></div></div>
+        <div class="card"><div class="card-title">이용 시설 조합 TOP 10</div><div class="card-sub">학생별 선택 시설 패턴</div><div class="cw"><canvas id="ch-su-combo"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">월별 신규·재방문 학생수</div><div class="card-sub">월별 이용 학생 현황</div><div class="cw"><canvas id="ch-su-monthly"></canvas></div></div>
+    </div>
+
+    <!-- ══ 학과별 상세 ══ -->
+    <div class="page" id="page-stat-detail">
+      <div class="print-header" id="ph-stat-detail">
+        <h2>유한대학교 웰니스스테이션 — 📋 학과별 상세</h2>
+        <p id="ph-sub-stat-detail"></p>
+      </div>
+      <div class="print-btn-wrap">
+        <button class="print-btn print-btn-main" onclick="printPage('stat-detail','📋 학과별 상세')">🖨️ A4 가로 인쇄</button>
+      </div>
+      <div class="ig" id="sd-insight"></div>
+      <div class="filter-bar">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);">📅 기간</span>
+        <input type="date" id="sd-from">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="sd-to">
+        <button class="btn-f" onclick="applyDetailFilter()">적용</button>
+        <button class="btn-r" onclick="resetDetailFilter()">초기화</button>
+        <span style="width:1px;height:20px;background:var(--border);display:inline-block;margin:0 4px;"></span>
+        <input class="search-box" id="sd-search" placeholder="🔍 학과명 검색" oninput="renderStatDetail()">
+        <div id="sd-series-btns"></div>
+        <span id="sd-count" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table class="dd-table" id="sd-table">
+          <thead><tr>
+            <th onclick="sdSort('rank')" id="th-rank">순위</th>
+            <th onclick="sdSort('dept')" id="th-dept">학과</th>
+            <th onclick="sdSort('series')" id="th-series">계열</th>
+            <th onclick="sdSort('visit')" id="th-visit">방문횟수</th>
+            <th onclick="sdSort('uniq')" id="th-uniq">학생수</th>
+            <th onclick="sdSort('f0')" id="th-f0">인생네컷</th>
+            <th onclick="sdSort('f1')" id="th-f1">코인노래방</th>
+            <th onclick="sdSort('f2')" id="th-f2">탁구장</th>
+            <th onclick="sdSort('f3')" id="th-f3">헬스장</th>
+            <th onclick="sdSort('total')" id="th-total">이용건수</th>
+            <th>비율</th>
+          </tr></thead>
+          <tbody id="sd-tbody"></tbody>
+          <tfoot id="sd-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ 학번별 통계 (2탭) ══ -->
+    <div class="page" id="page-stat-student">
+
+      <!-- 탭 버튼 -->
+      <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0;">
+        <button class="su2-tab active" id="su2-tab-cohort" onclick="su2Switch('cohort',this)"
+          style="padding:10px 20px;border:none;border-bottom:3px solid var(--c1);background:none;font-size:13px;font-weight:700;color:var(--c1);cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+          🎓 입학년도별 통계
+        </button>
+        <button class="su2-tab" id="su2-tab-top" onclick="su2Switch('top',this)"
+          style="padding:10px 20px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+          👑 개인별 분석 Top 100
+        </button>
+      </div>
+
+      <!-- ── 탭1: 입학년도별 통계 ── -->
+      <div id="su2-cohort">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);">학번 앞 4자리(입학년도) 기준 집계 · 전체 학년도 데이터</div>
+          <button class="btn-f" onclick="loadCohortStats()" id="cohort-load-btn">📊 집계 시작</button>
+        </div>
+
+        <!-- 로딩 전 안내 -->
+        <div id="cohort-empty" style="text-align:center;padding:60px 20px;color:var(--muted);">
+          <div style="font-size:40px;margin-bottom:10px;">🎓</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px;">집계 시작 버튼을 누르세요</div>
+          <div style="font-size:12px;">전체 기간 데이터를 불러와 입학년도별로 분석합니다</div>
+        </div>
+
+        <!-- 집계 결과 -->
+        <div id="cohort-result" style="display:none;">
+          <!-- KPI 요약 -->
+          <div id="cohort-kpi" class="g4" style="margin-bottom:16px;"></div>
+
+          <!-- 입학년도별 막대 차트 -->
+          <div class="g2" style="margin-bottom:16px;">
+            <div class="card">
+              <div class="card-title">입학년도별 총 방문횟수</div>
+              <div class="card-sub">학번 앞 4자리 기준</div>
+              <div class="cw-md"><canvas id="ch-cohort-visit"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">입학년도별 이용 학생수</div>
+              <div class="card-sub">중복 제거 인원</div>
+              <div class="cw-md"><canvas id="ch-cohort-uniq"></canvas></div>
+            </div>
+          </div>
+
+          <!-- 시설별 stacked -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">입학년도 × 시설별 이용 분포</div>
+            <div class="card-sub">입학년도별 4개 시설 이용건수 누적</div>
+            <div class="cw-md"><canvas id="ch-cohort-fac-stack"></canvas></div>
+          </div>
+
+          <!-- 상세 테이블 -->
+          <div class="card" style="overflow-x:auto;">
+            <div class="ch"><div class="ct">입학년도별 상세 현황</div></div>
+            <table class="dd-table" id="cohort-table">
+              <thead><tr>
+                <th>입학년도</th>
+                <th class="dd-num">방문횟수</th>
+                <th class="dd-num">학생수</th>
+                <th class="dd-num">인당방문</th>
+                <th class="dd-num">📸 인생네컷</th>
+                <th class="dd-num">🎤 코인노래방</th>
+                <th class="dd-num">🏓 탁구장</th>
+                <th class="dd-num">💪 헬스장</th>
+                <th class="dd-num">이용건수합</th>
+                <th>시설비율</th>
+              </tr></thead>
+              <tbody id="cohort-tbody"></tbody>
+              <tfoot id="cohort-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 탭2: 개인별 분석 Top 100 ── -->
+      <div id="su2-top" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;color:var(--muted);">방문횟수 기준 상위 100명 · 이름 클릭 시 상세 패널 오픈</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="search-box" id="top100-search" placeholder="🔍 이름/학번 검색" oninput="filterTop100()" style="width:160px;">
+            <button class="btn-f" onclick="loadTop100()" id="top100-load-btn">📊 집계 시작</button>
+          </div>
+        </div>
+
+        <!-- 로딩 전 -->
+        <div id="top100-empty" style="text-align:center;padding:60px 20px;color:var(--muted);">
+          <div style="font-size:40px;margin-bottom:10px;">👑</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px;">집계 시작 버튼을 누르세요</div>
+          <div style="font-size:12px;">전체 기간 이용자를 방문횟수 기준으로 정렬합니다</div>
+        </div>
+
+        <!-- Top 100 결과 + 상세 패널 (좌우 분할) -->
+        <div id="top100-result" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start;">
+
+            <!-- 랭킹 테이블 -->
+            <div class="card" style="overflow-x:auto;">
+              <table class="dd-table" id="top100-table">
+                <thead><tr>
+                  <th style="width:38px;">순위</th>
+                  <th>이름</th>
+                  <th>학번</th>
+                  <th>학과</th>
+                  <th class="dd-num">방문</th>
+                  <th class="dd-num">📸</th>
+                  <th class="dd-num">🎤</th>
+                  <th class="dd-num">🏓</th>
+                  <th class="dd-num">💪</th>
+                  <th>최근방문</th>
+                  <th>선호시설</th>
+                </tr></thead>
+                <tbody id="top100-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- 개인 상세 패널 (우측 고정) -->
+            <div id="top100-panel" style="position:sticky;top:70px;">
+              <div style="background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow-md);">
+                <div id="panel-empty" style="text-align:center;padding:40px 10px;color:var(--muted);">
+                  <div style="font-size:32px;margin-bottom:8px;">👈</div>
+                  <div style="font-size:12px;">왼쪽 표에서 학생을 클릭하면<br>개인 분석이 여기에 표시됩니다</div>
+                </div>
+                <div id="panel-content" style="display:none;">
+                  <!-- 프로필 -->
+                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                    <div style="width:48px;height:48px;border-radius:12px;background:var(--c1l);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎓</div>
+                    <div>
+                      <div style="font-size:17px;font-weight:800;color:var(--text);" id="panel-name"></div>
+                      <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="panel-meta"></div>
+                    </div>
+                    <div style="margin-left:auto;text-align:center;">
+                      <div style="font-size:24px;font-weight:900;color:var(--c1);" id="panel-rank"></div>
+                      <div style="font-size:10px;color:var(--muted);">위</div>
+                    </div>
+                  </div>
+                  <!-- 스탯 그리드 -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;" id="panel-stats"></div>
+                  <!-- 시설 도넛 -->
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">시설별 이용건수</div>
+                    <div style="position:relative;height:140px;"><canvas id="panel-fac-chart"></canvas></div>
+                  </div>
+                  <!-- 월별 미니 바 -->
+                  <div>
+                    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">월별 방문 패턴</div>
+                    <div style="position:relative;height:90px;"><canvas id="panel-month-chart"></canvas></div>
+                  </div>
+                  <!-- 최근 이력 5건 -->
+                  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+                    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">최근 이용 이력</div>
+                    <div id="panel-history"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-stat-student -->
+
+  </div><!-- /pc -->
+</main>
+
+<!-- 삭제 모달 -->
+<div class="mo" id="mo-del">
+  <div class="mb"><h3>⚠️ 삭제 확인</h3><p>이 신청 이력을 삭제하시겠습니까?<br>삭제된 데이터는 복구할 수 없습니다.</p>
+  <div class="ma"><button class="btn-cx" onclick="closeMo('mo-del')">취소</button><button class="btn-ok" onclick="doDelete()">삭제</button></div></div>
+</div>
+<!-- 퇴실 모달 -->
+<div class="mo" id="mo-exit">
+  <div class="mb"><h3 style="color:var(--c1);">🕐 퇴실 시간 입력</h3>
+  <div class="ef"><label>퇴실 시간</label><input type="time" id="exit-time" step="60"></div>
+  <div class="ma"><button class="btn-cx" onclick="closeMo('mo-exit')">취소</button><button class="btn-ok" style="background:var(--c1)" onclick="doExit()">저장</button></div></div>
+</div>
+
+<!-- 대시보드 모드 오버레이 -->
+<div class="dashboard-overlay" id="db-overlay">
+  <div class="db-header">
+    <div class="db-title">
+      🏋️ 웰니스스테이션 통계 대시보드
+      <span id="db-yr-label" style="font-size:11px;font-weight:400;color:rgba(255,255,255,.5);margin-left:4px;"></span>
+    </div>
+    <div class="db-controls">
+      <button class="db-btn" onclick="dbPrev()">◀ 이전</button>
+      <div class="db-nav" id="db-nav"></div>
+      <button class="db-btn" onclick="dbNext()">다음 ▶</button>
+      <button class="db-btn" id="db-auto-btn" onclick="toggleDbAuto()">⏵ 자동전환</button>
+      <select id="db-interval" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);padding:4px 8px;border-radius:6px;font-size:11px;font-family:inherit;" onchange="updateDbInterval()">
+        <option value="5000">5초</option>
+        <option value="10000" selected>10초</option>
+        <option value="20000">20초</option>
+        <option value="30000">30초</option>
+      </select>
+      <button class="db-btn" onclick="closeDashboard()" style="background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.3);color:#fca5a5;">✕ 닫기</button>
+    </div>
+  </div>
+  <div class="db-body">
+    <!-- 슬라이드 1: KPI + 시설 + 요일 -->
+    <div class="db-slide db-slide-1 active" id="db-s1">
+      <div class="db-kpi-group" id="db-kpi"></div>
+      <div class="db-card db-card-span2">
+        <div class="db-ct">📸 시설별 이용건수</div>
+        <div class="db-cw"><canvas id="db-ch-fac"></canvas></div>
+      </div>
+      <div class="db-card db-card-span2">
+        <div class="db-ct">📆 요일별 이용건수</div>
+        <div class="db-cw"><canvas id="db-ch-day"></canvas></div>
+      </div>
+    </div>
+    <!-- 슬라이드 2: 시간대 + 시설별 시간대 + 월별 -->
+    <div class="db-slide db-slide-2" id="db-s2">
+      <div class="db-card">
+        <div class="db-ct">⏰ 시간대별 이용건수</div>
+        <div class="db-cw-lg"><canvas id="db-ch-hour"></canvas></div>
+      </div>
+      <div class="db-card">
+        <div class="db-ct">🏟️ 시설별 시간대 추이</div>
+        <div class="db-cw-lg"><canvas id="db-ch-hour-fac"></canvas></div>
+      </div>
+      <div class="db-card">
+        <div class="db-ct">📅 월별 이용건수</div>
+        <div class="db-cw-lg"><canvas id="db-ch-month"></canvas></div>
+      </div>
+    </div>
+    <!-- 슬라이드 3: 학과 Top 20 + 계열별 -->
+    <div class="db-slide db-slide-3" id="db-s3">
+      <div class="db-card">
+        <div class="db-ct">🏫 학과별 Top 20</div>
+        <div style="height:260px;overflow-y:auto;" id="db-dept-list"></div>
+      </div>
+      <div class="db-card" style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div class="db-ct">📊 계열별 이용건수</div>
+          <div class="db-cw"><canvas id="db-ch-series"></canvas></div>
+        </div>
+        <div id="db-series-rows"></div>
+      </div>
+    </div>
+    <!-- 슬라이드 4: 재방문 + 다중시설 조합 -->
+    <div class="db-slide db-slide-4" id="db-s4">
+      <div class="db-card">
+        <div class="db-ct">🔄 재방문 횟수 분포</div>
+        <div class="db-cw-lg"><canvas id="db-ch-revisit"></canvas></div>
+        <div id="db-revisit-info" style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="db-card">
+        <div class="db-ct">🎯 다중시설 이용 조합 Top 8</div>
+        <div class="db-cw-lg"><canvas id="db-ch-combo"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="db-footer">
+    <div class="db-footer-info" id="db-footer-info">마지막 집계: —</div>
+    <div class="db-slide-lbl" id="db-slide-lbl">1 / 4</div>
+    <div class="db-auto-badge" id="db-auto-badge"></div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwFeqEH8wLslpI-t7n6aMNMp6-dZPb_ewDCg9kKK9RwLVUrActfcluTj8x0QbyNISes/exec';
+const FACS=['인생네컷','코인노래방','탁구장','헬스장'];
+const FAC_ICO=['📸','🎤','🏓','💪'];
+const FAC_C=['#2563eb','#f97316','#10b981','#f59e0b'];
+const FAC_CL=['#dbeafe','#ffedd5','#d1fae5','#fef3c7'];
+const DAYS=['일','월','화','수','목','금','토'];
+const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const SERIES_MAP={
+  '공학':['기계시스템전공','전기공학전공','전자공학전공','산업안전전공','산업디자인전공','컴퓨터소프트웨어전공','소방설비안전전공','컴퓨터정보통신전공','IT비즈니스전공','인공지능전공','게임콘텐츠전공','자유전공학과','기계시스템전공(심화)'],
+  '예체능':['시각디자인전공','애니메이션웹툰전공','패션디자인전공','실내건축전공','광고미디어전공','방송영상전공','방송문예창작전공','방송연예전공','패션디자인전공(심화)','실내건축전공(전공심화)'],
+  '자연과학':['식품영양학과','호텔조리전공','유한바이오제약전공','피부메이크업전공','뷰티화장품전공','카페베이커리전공','유한생명화공전공','반려동물보건학과','스포츠재활전공','작업치료과','응급구조과','반려동물산업전공','치위생과','유한바이오제약전공(심화)'],
+  '인문사회':['호텔관광전공','일본비즈니스전공','경영정보전공','보건의료행정학과','사회복지전공','아동보육전공','세무회계전공','항공경영전공','항공서비스학과','보건의료행정학과(심화)','사회복지전공(심화)']
+};
+const YR={'2025':{label:'2025학년도',start:'2025-03-01',end:'2026-02-28'},
+          '2026':{label:'2026학년도',start:'2026-03-01',end:'2027-02-27'},
+          '2027':{label:'2027학년도',start:'2027-03-01',end:'2028-02-28'}};
+const PT={'overview':'📊 전체 현황','realtime':'🟢 실시간 이용현황','approval':'✅ 이용승인관리','stat-summary':'📈 종합 현황','stat-facility':'🏟️ 시설별 분석','stat-time':'⏰ 시간·요일 분석','stat-dept':'🏫 학과·계열 분석','stat-user':'👥 이용자 분석','stat-detail':'📋 학과별 상세','stat-student':'🔍 학번별 통계'};
+
+let curYear='2026', summary={}, apprRecords=[], apprTotal=0, apprPage=1, apprPageSize=100,
+    charts={}, statusF='all', delId=null, exitId=null,
+    sdSortKey='visit', sdSortAsc=false, sdSeriesF='',
+    apprLoading=false;
+
+// ── 로딩 ──
+function showLoad(msg){let el=document.getElementById('ld-ov');if(!el){el=document.createElement('div');el.id='ld-ov';el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:inherit;';el.innerHTML='<div style="font-size:36px">⏳</div><div id="ld-msg" style="font-size:14px;font-weight:700;color:#1e2d52;"></div>';document.body.appendChild(el);}document.getElementById('ld-msg').textContent=msg||'처리 중...';el.style.display='flex';}
+function hideLoad(){const el=document.getElementById('ld-ov');if(el)el.style.display='none';}
+
+// ── API ──
+async function apiFetch(params){
+  const qs=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(String(v))).join('&');
+  const res=await fetch(SCRIPT_URL+'?'+qs, {redirect:'follow'});
+  const text=await res.text();
+  // HTML 응답이 오면 리다이렉트 실패 - SCRIPT_URL 확인 필요
+  if(text.trim().startsWith('<')){throw new Error('서버가 HTML을 반환했습니다. 배포 URL을 확인하세요.');}
+  let data;
+  try{data=JSON.parse(text);}
+  catch(e){throw new Error('파싱 오류: '+text.substring(0,120));}
+  if(!data.success)throw new Error(data.message||'서버 오류');
+  return data;
+}
+
+// 통계용 요약 데이터 로드 (경량)
+let summaryCache={}, summaryCacheKey='', summaryCacheAt=0;
+async function loadSummary(force){
+  const y=YR[curYear];
+  const cKey=y.start+'|'+y.end;
+  const now=Date.now();
+  // 5분 캐시 (300000ms) - 강제갱신 아니면 재사용
+  if(!force && cKey===summaryCacheKey && (now-summaryCacheAt)<300000 && summaryCacheAt>0){
+    summary=summaryCache; return;
+  }
+  showLoad('통계 집계 중...');
+  try{
+    const res=await apiFetch({action:'getSummary',from:y.start,to:y.end});
+    summary=res; summaryCache=res; summaryCacheKey=cKey; summaryCacheAt=now;
+    calcUniqInByDept(summary);  // byDept.uniq 보정
+    populateStatDeptSels();     // 학과 드롭다운 갱신
+    updateDeptSel();            // 승인관리 학과 드롭다운도 갱신
+  }catch(e){alert('❌ 통계 로드 실패\n'+e.message);summary={};}
+  finally{hideLoad();}
+}
+
+// 승인관리용 페이지 로드 (서버사이드 필터+페이지네이션)
+async function loadApproval(page, force){
+  if(apprLoading && !force)return;
+  apprLoading=false; // force면 이전 로딩 취소
+  const todayStr=new Date().toISOString().split('T')[0];
+  const from=document.getElementById('ap-from')?.value||todayStr;
+  const to=document.getElementById('ap-to')?.value||todayStr;
+  const fac=document.getElementById('ap-fac')?.value||'';
+  const dept=document.getElementById('ap-dept')?.value||'';
+  const srch=document.getElementById('ap-srch')?.value||'';
+  const status=statusF==='all'?'':statusF;
+  // 같은 조건+페이지면 캐시 사용 (강제 새로고침 제외)
+  const cacheKey=[from,to,fac,dept,srch,status,page,apprPageSize].join('|');
+  if(!force && cacheKey===apprCacheKey && apprRecords.length>0){return;}
+  apprLoading=true;
+  apprCacheKey=cacheKey;
+  showLoad('데이터 로드 중...');
+  try{
+    const res=await apiFetch({action:'getAll',from,to,status,fac,dept,search:srch,pageNum:page||1,pageSize:apprPageSize});
+    apprRecords=res.records||[];
+    apprTotal=res.total||0;
+    apprPage=res.pageNum||1;
+    updateDeptSel();
+  }catch(e){alert('❌ 로드 실패\n'+e.message);apprRecords=[];apprCacheKey='';}
+  finally{hideLoad();apprLoading=false;}
+}
+
+async function refreshData(){
+  const a=document.querySelector('.page.active');
+  const pageId=a?.id.replace('page-','');
+  apprCacheKey=''; summaryCacheAt=0;
+  if(pageId==='approval'){await loadApproval(1,true);renderApproval();}
+  else{await Promise.all([loadSummary(true), loadApproval(apprPage,true)]);renderPage(pageId);}
+}
+
+// ══════════════════════════════════════
+// 실시간 이용현황
+// ══════════════════════════════════════
+let realtimeData = {pending:[], using:[], exited:[]};
+
+async function loadRealtime(){
+  const dateEl = document.getElementById('rt-date');
+  const today  = new Date().toISOString().split('T')[0];
+  const dt     = dateEl?.value || today;
+  if(dateEl && !dateEl.value) dateEl.value = today;
+  showLoad('실시간 현황 로딩...');
+  try{
+    const res = await apiFetch({action:'getAll', from:dt, to:dt, pageSize:500, pageNum:1});
+    const recs = res.records || [];
+    realtimeData.pending = recs.filter(r=>r.status==='승인대기');
+    realtimeData.using   = recs.filter(r=>r.status==='승인완료');
+    realtimeData.exited  = recs.filter(r=>r.status==='퇴실완료');
+    renderRealtime();
+  }catch(e){console.error('실시간 로딩 실패',e);}
+  finally{hideLoad();}
+}
+
+function renderRealtime(){
+  const {pending, using, exited} = realtimeData;
+  const total = pending.length + using.length + exited.length;
+  const now   = new Date();
+  const upEl  = document.getElementById('rt-lastupdate');
+  if(upEl) upEl.textContent = '마지막 갱신: '+now.toLocaleTimeString('ko-KR');
+
+  // ── KPI 요약 ──
+  const kpiEl = document.getElementById('rt-kpi');
+  if(kpiEl){
+    const kpis = [
+      {label:'전체 신청',  val:total,          color:'#2563eb', bg:'#dbeafe', ico:'📋'},
+      {label:'승인 대기',  val:pending.length, color:'#f59e0b', bg:'#fef3c7', ico:'⏳'},
+      {label:'이용 중',    val:using.length,   color:'#10b981', bg:'#d1fae5', ico:'🏃'},
+      {label:'퇴실 완료',  val:exited.length,  color:'#6366f1', bg:'#ede9fe', ico:'✅'},
+    ];
+    kpiEl.innerHTML = kpis.map(k=>`
+      <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border-left:4px solid ${k.color};display:flex;align-items:center;gap:14px;">
+        <div style="width:46px;height:46px;border-radius:12px;background:${k.bg};display:flex;align-items:center;justify-content:center;font-size:20px;">${k.ico}</div>
+        <div>
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:2px;">${k.label}</div>
+          <div style="font-size:28px;font-weight:800;color:${k.color};line-height:1;">${k.val}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── 시설별 카드 (코인노래방 제외) ──
+  const facEl = document.getElementById('rt-fac-cards');
+  if(facEl){
+    const allRecs  = [...pending, ...using, ...exited];
+    const nonKaraoke = FACS.filter(f=>f!=='코인노래방');
+    facEl.innerHTML = nonKaraoke.map(fac=>{
+      const fi       = FACS.indexOf(fac);
+      const facRecs  = allRecs.filter(r=>(r.facilities||[]).includes(fac));
+      const fPending = facRecs.filter(r=>r.status==='승인대기').length;
+      const fUsing   = facRecs.filter(r=>r.status==='승인완료').length;
+      const fExited  = facRecs.filter(r=>r.status==='퇴실완료').length;
+      const fTotal   = facRecs.length;
+      const c = FAC_C[fi], cl = FAC_CL[fi];
+
+      // 이용중 명단
+      // 시설별 최대 표시 인원
+      const FAC_MAX_MAP = {'인생네컷':10,'탁구장':20,'헬스장':20};
+      const maxShow = FAC_MAX_MAP[fac]||10;
+      const usingRecs = using.filter(r=>(r.facilities||[]).includes(fac));
+      const usingList = usingRecs.slice(0, maxShow)
+        .map(r=>{
+          const entry = r.entryTime||'-';
+          const mins  = entry!=='-' ? Math.floor((Date.now()-new Date().setHours(...entry.split(':').map(Number),0))/60000) : null;
+          const dur   = mins!==null&&mins>=0 ? (mins>=60?Math.floor(mins/60)+'시간 '+(mins%60)+'분':mins+'분') : '-';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:12px;font-weight:700;color:${c};min-width:42px;">${entry}</span>
+            <span style="font-size:12px;color:#374151;font-weight:600;">${r.name}</span>
+            <span style="font-size:11px;color:#64748b;">(${r.dept||''})</span>
+            <span style="font-size:11px;color:#6366f1;font-weight:600;margin-left:auto;">${dur}</span>
+          </div>`;
+        }).join('');
+      const moreCount = usingRecs.length - maxShow;
+      // 스크롤 높이: 행당 34px, 최대 maxShow명 기준
+      const listMaxH = maxShow * 34;
+
+      return `
+      <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-top:4px solid ${c};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:28px;">${FAC_ICO[fi]}</span>
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#0f172a;">${fac}</div>
+              <div style="font-size:11px;color:#64748b;">오늘 총 ${fTotal}건</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#64748b;margin-bottom:2px;">총 이용건수</div>
+            <div style="font-size:26px;font-weight:800;color:${c};">${fTotal}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+          <div style="background:#fef3c7;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#92400e;font-weight:700;">⏳ 승인대기</div>
+            <div style="font-size:24px;font-weight:800;color:#d97706;">${fPending}</div>
+          </div>
+          <div style="background:#d1fae5;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#065f46;font-weight:700;">🏃 이용중</div>
+            <div style="font-size:24px;font-weight:800;color:#059669;">${fUsing}</div>
+          </div>
+          <div style="background:#ede9fe;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#4c1d95;font-weight:700;">✅ 퇴실완료</div>
+            <div style="font-size:24px;font-weight:800;color:#7c3aed;">${fExited}</div>
+          </div>
+        </div>
+        ${fUsing>0 ? `
+          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;">현재 이용중 (${fUsing}명)</div>
+          <div style="max-height:${listMaxH}px;overflow-y:auto;border-radius:8px;">
+            ${usingList}
+            ${moreCount>0?`<div style="text-align:center;padding:6px;font-size:11px;color:#94a3b8;">+${moreCount}명 더 있음</div>`:''}
+          </div>`
+          : `<div style="font-size:12px;color:#94a3b8;text-align:center;padding:10px 0;">현재 이용자 없음</div>`}
+      </div>`;
+    }).join('');
+  }
+
+  // ── 코인노래방 ROOM별 현황 ──
+  const roomSec = document.getElementById('rt-room-section');
+  if(roomSec){
+    const allRecs   = [...pending, ...using, ...exited];
+    const karaokeAll = allRecs.filter(r=>(r.facilities||[]).includes('코인노래방'));
+    const kTotal    = karaokeAll.length;
+    const kPending  = karaokeAll.filter(r=>r.status==='승인대기').length;
+    const kUsing    = karaokeAll.filter(r=>r.status==='승인완료').length;
+    const kExited   = karaokeAll.filter(r=>r.status==='퇴실완료').length;
+
+    const ROOMS = ['1ROOM','2ROOM','3ROOM'];
+    const ROOM_BG  = {'1ROOM':'#f28b82','2ROOM':'#fdd663','3ROOM':'#1a73e8'};
+    const ROOM_FG  = {'1ROOM':'#fff',   '2ROOM':'#5f4400','3ROOM':'#fff'};
+    const ROOM_LBL = {'1ROOM':'ROOM 1', '2ROOM':'ROOM 2', '3ROOM':'ROOM 3'};
+
+    const roomCards = ROOMS.map(rm=>{
+      const rmUsing  = using.filter(r=>(r.facilities||[]).includes('코인노래방')&&r.room===rm);
+      const rmExited = exited.filter(r=>(r.facilities||[]).includes('코인노래방')&&r.room===rm);
+      const isOccupied = rmUsing.length > 0;
+      const bg   = ROOM_BG[rm], fg = ROOM_FG[rm];
+
+      const ROOM_MAX = 10;
+      const usingRows = rmUsing.slice(0, ROOM_MAX).map(r=>{
+        const entry = r.entryTime||'-';
+        const mins  = entry!=='-' ? Math.floor((Date.now()-new Date().setHours(...entry.split(':').map(Number),0))/60000) : null;
+        const dur   = mins!==null&&mins>=0 ? (mins>=60?Math.floor(mins/60)+'시간 '+(mins%60)+'분':mins+'분') : '-';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:8px;margin-top:6px;">
+          <span style="font-size:13px;font-weight:700;color:#059669;min-width:42px;">${entry}</span>
+          <span style="font-size:13px;font-weight:700;">${r.name}</span>
+          <span style="font-size:11px;color:#64748b;">(${r.dept||''})</span>
+          <span style="font-size:11px;color:#6366f1;font-weight:600;margin-left:auto;">${dur}</span>
+        </div>`;
+      }).join('');
+      const usingMore = rmUsing.length - ROOM_MAX;
+
+      // 퇴실완료: 최대 10명, 스크롤
+      const exitedRows = rmExited.slice(0, ROOM_MAX).map(r=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;margin-top:4px;opacity:.6;">
+          <span style="font-size:12px;color:#94a3b8;">${r.entryTime||'-'} ~ ${r.exitTime||'-'}</span>
+          <span style="font-size:12px;color:#374151;flex:1;">${r.name}</span>
+          <span style="font-size:11px;padding:1px 6px;background:#ede9fe;color:#7c3aed;border-radius:4px;font-weight:700;">퇴실완료</span>
+        </div>`).join('');
+      const exitedMore = rmExited.length - ROOM_MAX;
+
+      return `
+      <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-top:4px solid ${bg};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:42px;height:42px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:${fg};">${rm[0]}</div>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:#0f172a;">${ROOM_LBL[rm]}</div>
+              <div style="font-size:11px;margin-top:1px;">
+                <span style="padding:2px 8px;border-radius:20px;font-weight:700;font-size:11px;${isOccupied?'background:#d1fae5;color:#059669;':'background:#f1f5f9;color:#94a3b8;'}">${isOccupied?'● 이용중':'○ 비어있음'}</span>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:#64748b;">이용중 / 퇴실</div>
+            <div style="font-size:20px;font-weight:800;"><span style="color:#059669;">${rmUsing.length}</span><span style="color:#cbd5e1;font-size:14px;margin:0 3px;">/</span><span style="color:#7c3aed;">${rmExited.length}</span></div>
+          </div>
+        </div>
+        <div style="max-height:${ROOM_MAX*46}px;overflow-y:auto;">
+          ${usingRows}
+          ${usingMore>0?`<div style="text-align:center;padding:4px;font-size:11px;color:#94a3b8;">+${usingMore}명 더 있음</div>`:''}
+        </div>
+        ${rmExited.length>0&&!isOccupied?`<div style="max-height:${ROOM_MAX*36}px;overflow-y:auto;">${exitedRows}${exitedMore>0?`<div style="text-align:center;padding:4px;font-size:11px;color:#94a3b8;">+${exitedMore}명 더 있음</div>`:''}</div>`:''}
+        ${rmUsing.length===0&&rmExited.length===0?'<div style="font-size:12px;color:#94a3b8;text-align:center;padding:8px 0;">이용 내역 없음</div>':''}
+      </div>`;
+    }).join('');
+
+    roomSec.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border-top:4px solid #f97316;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:28px;">🎤</span>
+            <div>
+              <div style="font-size:16px;font-weight:800;color:#0f172a;">코인노래방</div>
+              <div style="font-size:11px;color:#64748b;">오늘 총 ${kTotal}건</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <div style="text-align:center;padding:6px 14px;background:#fef3c7;border-radius:10px;">
+              <div style="font-size:10px;color:#92400e;font-weight:700;">⏳ 승인대기</div>
+              <div style="font-size:20px;font-weight:800;color:#d97706;">${kPending}</div>
+            </div>
+            <div style="text-align:center;padding:6px 14px;background:#d1fae5;border-radius:10px;">
+              <div style="font-size:10px;color:#065f46;font-weight:700;">🏃 이용중</div>
+              <div style="font-size:20px;font-weight:800;color:#059669;">${kUsing}</div>
+            </div>
+            <div style="text-align:center;padding:6px 14px;background:#ede9fe;border-radius:10px;">
+              <div style="font-size:10px;color:#4c1d95;font-weight:700;">✅ 퇴실완료</div>
+              <div style="font-size:20px;font-weight:800;color:#7c3aed;">${kExited}</div>
+            </div>
+            <div style="text-align:center;padding:6px 14px;background:#ffedd5;border-radius:10px;">
+              <div style="font-size:10px;color:#7c2d12;font-weight:700;">📊 총 이용건수</div>
+              <div style="font-size:20px;font-weight:800;color:#f97316;">${kTotal}</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+          ${roomCards}
+        </div>
+      </div>`;
+  }
+}
+
+
+// ── 자동 갱신 시스템 ──
+let autoRefreshTimer=null;
+let lastApprRefresh=0, lastSummaryRefresh=0;
+const APPR_INTERVAL=30000;   // 승인관리: 30초
+const SUMMARY_INTERVAL=300000; // 통계/현황: 5분
+
+async function autoRefresh(){
+  const now=Date.now();
+  const pageId=document.querySelector('.page.active')?.id.replace('page-','');
+  let apprUpdated=false, summaryUpdated=false;
+
+  // 승인관리 30초 갱신
+  if(now-lastApprRefresh>=APPR_INTERVAL){
+    apprCacheKey='';
+    await loadApproval(apprPage,true);
+    lastApprRefresh=now;
+    apprUpdated=true;
+  }
+  // 통계/현황 5분 갱신
+  if(now-lastSummaryRefresh>=SUMMARY_INTERVAL){
+    summaryCacheAt=0;
+    await loadSummary(true);
+    lastSummaryRefresh=now;
+    summaryUpdated=true;
+  }
+
+  // 현재 활성 탭 화면 갱신
+  if(pageId==='approval' && apprUpdated){
+    renderApproval();
+  } else if(pageId==='realtime' && apprUpdated){
+    renderRealtime();
+  } else if(pageId!=='approval' && pageId!=='realtime' && (apprUpdated||summaryUpdated)){
+    renderPage(pageId);
+  }
+
+  updateRefreshBadge();
+}
+
+function updateRefreshBadge(){
+  const el=document.getElementById('auto-refresh-badge');
+  if(!el)return;
+  const t=new Date();
+  const hh=t.getHours().toString().padStart(2,'0');
+  const mm=t.getMinutes().toString().padStart(2,'0');
+  const ss=t.getSeconds().toString().padStart(2,'0');
+  el.textContent='🔄 '+hh+':'+mm+':'+ss+' 갱신';
+}
+
+function startAutoRefresh(){
+  if(autoRefreshTimer)clearInterval(autoRefreshTimer);
+  lastApprRefresh=Date.now();
+  lastSummaryRefresh=Date.now();
+  autoRefreshTimer=setInterval(autoRefresh, 5000); // 5초마다 체크
+  updateRefreshBadge();
+}
+function stopAutoRefresh(){
+  if(autoRefreshTimer){clearInterval(autoRefreshTimer);autoRefreshTimer=null;}
+  const el=document.getElementById('auto-refresh-badge');
+  if(el)el.textContent='⏸ 자동갱신 중지';
+}
+
+// ── 헬퍼 ──
+function getYrRecs(){return [];} // 더 이상 사용 안 함 (summary 방식)
+function uniq(){return summary.uniqueCount||0;}
+function facCnt(f){return (summary.byFac||{})[f]||0;}
+function totalItems(){return summary.total||0;}
+function totalVisit(){return summary.visit||0;}
+function getSeries(dept){for(const[s,depts]of Object.entries(SERIES_MAP)){if(depts.includes(dept))return s;}return '기타';}
+function updateDeptSel(){
+  const sel=document.getElementById('ap-dept');if(!sel)return;
+  const cur=sel.value;
+  // summary.byDept 전체 학과 사용 (현재 페이지 records가 아닌 전체)
+  const allDepts=Object.keys(summary.byDept||{}).sort();
+  // records에만 있는 학과도 추가 (summary 로드 전 대비)
+  const recDepts=[...new Set(apprRecords.map(r=>r.dept).filter(Boolean))].sort();
+  const depts=[...new Set([...allDepts,...recDepts])].sort();
+  sel.innerHTML='<option value="">전체 학과</option>';
+  depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+  sel.value=cur;
+}
+
+// ── 차트 헬퍼 ──
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+const tip={backgroundColor:'#1e2d52',borderColor:'#e2e8f2',borderWidth:1,titleColor:'#fff',bodyColor:'#94a3b8',padding:10};
+function mkBar(id,labels,datasets,opts={}){
+  dc(id);const ctx=document.getElementById(id)?.getContext('2d');if(!ctx)return;
+  // 단일 dataset(색상 배열)로 통합 - 바 중앙 배치 + 자연스러운 두께
+  let ds;
+  if(datasets.length===1||opts.merged){
+    // 단일 dataset: 각 바 색상 개별 지정
+    const d=datasets[0];
+    const colors=Array.isArray(d.color)?d.color:labels.map((_,i)=>Array.isArray(d.color)?d.color[i]:(d.color||FAC_C[i%4]));
+    ds=[{
+      label: d.label||'',
+      data:  d.data||d,
+      backgroundColor: colors,
+      borderRadius:6, borderSkipped:false,
+    }];
+  } else {
+    // 다중 dataset (grouped bar)
+    ds=datasets.map((d,i)=>({
+      label: d.label||'',
+      data:  d.data||d,
+      backgroundColor: Array.isArray(d.color)?d.color:(d.color||FAC_C[i%4]),
+      borderRadius:6, borderSkipped:false,
+    }));
+  }
+  // 바 두께: 항목 수에 따라 자동 조정
+  const n=labels.length;
+  const barThickness = n<=4?60:n<=7?44:n<=12?32:n<=20?22:14;
+  charts[id]=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:ds},
+    options:{indexAxis:opts.horiz?'y':'x',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:datasets.length>1&&!!opts.legend,labels:{font:{size:11},boxWidth:10}},
+        tooltip:{...tip,callbacks:{
+          title: items=>labels[items[0].dataIndex],
+          label: c=>{
+            const lbl=c.dataset.label||labels[c.dataIndex]||'';
+            return (lbl?lbl+': ':'')+c.raw.toLocaleString();
+          }
+        }},
+        datalabels:{
+          display: opts.noLabel?false:true,
+          anchor:opts.horiz?'end':'end',
+          align: opts.horiz?'end':'end',
+          color:'#4b5a7a', font:{size:10,weight:'600'},
+          formatter:v=>(v>0?v.toLocaleString():''),
+          clip:false,
+        }
+      },
+      datasets:{bar:{barThickness:opts.barThickness||barThickness}},
+      scales:{[opts.horiz?'x':'y']:{beginAtZero:true,ticks:{font:{size:10}},stacked:!!opts.stacked},
+              [opts.horiz?'y':'x']:{ticks:{font:{size:10}},stacked:!!opts.stacked}}}});
+}
+function mkLine(id,labels,datasets){
+  dc(id);const ctx=document.getElementById(id)?.getContext('2d');if(!ctx)return;
+  charts[id]=new Chart(ctx,{type:'line',
+    data:{labels,datasets:datasets.map((d,i)=>({label:d.label||'',data:d.data,borderColor:d.color||FAC_C[i%4],backgroundColor:(d.color||FAC_C[i%4])+'22',fill:!!d.fill,tension:.38,pointRadius:3,pointHoverRadius:5}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:datasets.length>1,labels:{font:{size:11},boxWidth:10}},tooltip:tip},
+      scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+}
+function mkDonut(id,labels,data,colors){
+  dc(id);const ctx=document.getElementById(id)?.getContext('2d');if(!ctx)return;
+  charts[id]=new Chart(ctx,{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors||FAC_C,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip,datalabels:{display:false}}}});
+}
+
+// ── 네비 ──
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+name+"'"))n.classList.add('active');});
+  document.getElementById('pg-title').textContent=PT[name]||name;
+  if(name==='approval'){
+    // 캐시 있으면 즉시 렌더, 없으면 로드 후 렌더
+    if(apprRecords.length>0){renderApproval();}
+    loadApproval(apprPage).then(()=>renderApproval());
+  } else{renderPage(name);}
+}
+function renderPage(n){({
+  'overview':renderOverview,'approval':renderApproval,
+  'stat-summary':renderSummary,'stat-facility':renderFacility,
+  'stat-time':renderTime,'stat-dept':renderDept,
+  'stat-user':renderUser,'stat-detail':renderStatDetail,
+  'stat-student':()=>{}
+})[n]?.();}
+function onYearChange(){curYear=document.getElementById('global-year').value;summaryCacheAt=0;const y=YR[curYear];document.getElementById('sb-yr').textContent=y.label;document.getElementById('sb-rng').textContent=y.start.replace(/-/g,'.')+' ~ '+y.end.replace(/-/g,'.');const a=document.querySelector('.page.active');if(a)renderPage(a.id.replace('page-',''));}
+
+// ══════════════════════════════════════
+// 전체현황
+// ══════════════════════════════════════
+function renderOverview(){
+  const total=totalItems(), visit=totalVisit(), uniqs=uniq();
+  const pend=(summary.byStatus||{})['승인대기']||0;
+  document.getElementById('ov-kpi').innerHTML=
+    mkKpi('총 이용건수',total,'(시설 합계)','#2563eb','#dbeafe','📸')+
+    mkKpi('총 방문횟수',visit,'(신청 건수)','#10b981','#d1fae5','🚶')+
+    mkKpi('이용 학생수',uniqs,'(중복 제외)','#f97316','#ffedd5','🎓')+
+    mkKpi('승인 대기',pend,'처리 필요','#ef4444','#fde8e8','⏳');
+  mkBar('ch-ov-fac',FACS,[{label:'이용건수',data:FACS.map(f=>facCnt(f)),color:FAC_C}],{merged:true});
+  mkBar('ch-ov-day',DAYS.map(d=>d+'요일'),[{label:'이용건수',data:(summary.byDay||new Array(7).fill(0)),color:'#2563eb'}]);
+  // 학과별 이용현황 가로 차트
+  const byDept = summary.byDept||{};
+  const deptSorted = Object.entries(byDept).sort((a,b)=>b[1].total-a[1].total);
+  const deptLabels = deptSorted.map(e=>e[0]);
+  const deptTotals = deptSorted.map(e=>e[1].total);
+  const deptUniq   = deptSorted.map(e=>e[1].uniq||0);
+  const sub = document.getElementById('ov-dept-sub');
+  if(sub) sub.textContent = deptLabels.length+'개 학과 전체';
+  // 캔버스 + 래퍼 높이: 학과당 36px (충분한 여백)
+  const rowH = 36;
+  const chartH = Math.max(400, deptLabels.length * rowH);
+  const cvs = document.getElementById('ch-ov-dept');
+  const wrap = document.getElementById('ov-dept-wrap');
+  if(wrap){ wrap.style.height = chartH+'px'; wrap.style.maxHeight = Math.min(chartH+20,640)+'px'; }
+  if(cvs){ cvs.style.height = chartH+'px'; cvs.style.width='100%'; cvs.style.display='block'; }
+  dc('ch-ov-dept');
+  const ctx2 = cvs?.getContext('2d');
+  if(ctx2 && deptLabels.length){
+    const barColors = deptLabels.map((_,i)=>FAC_C[i%4]);
+    charts['ch-ov-dept'] = new Chart(ctx2,{type:'bar',
+      data:{labels:deptLabels, datasets:[{
+        label:'이용건수',
+        data:deptTotals,
+        backgroundColor: barColors,
+        borderRadius:5, borderSkipped:false,
+      }]},
+      options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        datasets:{bar:{barThickness:22}},
+        plugins:{
+          legend:{display:false},
+          tooltip:{...tip,callbacks:{
+            title:items=>deptLabels[items[0].dataIndex],
+            label:c=>'이용건수: '+c.raw+'건  |  학생수: '+deptUniq[c.dataIndex]+'명'
+          }},
+          datalabels:{display:true,anchor:'end',align:'end',
+            color:'#374151',font:{size:10,weight:'700'},
+            formatter:v=>v>0?v+'건':'',clip:false}
+        },
+        scales:{
+          x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'#f0f0f0'}},
+          y:{ticks:{font:{size:11},padding:4},grid:{display:false}}
+        }
+      }
+    });
+  }
+}
+function mkKpi(label,val,sub,color,bg,ico){
+  return '<div class="kpi"><div class="kpi-top" style="background:'+color+'"></div><div class="kpi-ico" style="background:'+bg+'">'+ico+'</div><div class="kpi-label">'+label+'</div><div class="kpi-val" style="color:'+color+'">'+val.toLocaleString()+'</div><div class="kpi-sub">'+sub+'</div></div>';
+}
+
+// ══════════════════════════════════════
+// 이용승인관리
+// ══════════════════════════════════════
+function setStab(s,btn){statusF=s;document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');searchApproval();}
+async function searchApproval(){apprPage=1;apprCacheKey='';await loadApproval(1,true);renderApproval();}
+function renderApproval(){
+  const t=document.getElementById('tb-appr');
+  t.innerHTML='<thead><tr><th>접수번호</th><th>날짜</th><th>학과</th><th>성명</th><th>학번</th><th>인생네컷</th><th>코인노래방</th><th>탁구장</th><th>헬스장</th><th>출입</th><th>퇴실</th><th>이용시간</th><th>상태</th><th>관리</th></tr></thead>';
+  const tb=t.createTBody();
+  // 페이지네이션 정보 표시
+  renderApprPager();
+  if(!apprRecords.length){const tr=tb.insertRow();const td=tr.insertCell();td.colSpan=14;td.innerHTML='<div class="empty"><div class="emo">📋</div>조건에 맞는 데이터 없음</div>';return;}
+  apprRecords.forEach(function(r){
+    const rid=r.id;
+    const bc=r.status==='승인완료'?'approved':r.status==='퇴실완료'?'exited':r.status==='거부'?'rejected':'pending';
+    const tr=tb.insertRow();
+    let td;
+    td=tr.insertCell();td.innerHTML='<span class="id-badge">'+rid+'</span>';
+    td=tr.insertCell();td.style.whiteSpace='nowrap';td.textContent=r.date;
+    td=tr.insertCell();td.style.fontSize='12px';td.textContent=r.dept||'-';
+    td=tr.insertCell();td.textContent=r.name||'-';
+    td=tr.insertCell();td.style.fontFamily='monospace';td.textContent=r.studentId||'-';
+    FACS.forEach(function(f2){td=tr.insertCell();td.style.textAlign='center';td.innerHTML=(r.facilities||[]).includes(f2)?'<span style="color:var(--c1);font-size:15px;font-weight:700">✓</span>':'<span style="color:#ddd">—</span>';});
+    td=tr.insertCell();td.textContent=r.entryTime||'-';
+    td=tr.insertCell();td.innerHTML=r.exitTime?r.exitTime:'<span style="color:#ddd;font-size:11px">미입력</span>';
+    td=tr.insertCell();td.textContent=r.duration||'-';
+    td=tr.insertCell();
+    // 상태 뱃지
+    const statusWrap=document.createElement('div');
+    statusWrap.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+    statusWrap.innerHTML='<span class="badge '+bc+'">'+r.status+'</span>';
+    // ROOM 뱃지 (배정된 경우)
+    const roomVal=(r.room||'').trim();
+    const roomBadge=document.createElement('span');
+    roomBadge.id='room-badge-'+rid;
+    if(roomVal){
+      const rc={'1ROOM':'#f28b82','2ROOM':'#fdd663','3ROOM':'#1a73e8'};
+      const fc={'1ROOM':'#fff','2ROOM':'#5f4400','3ROOM':'#fff'};
+      roomBadge.style.cssText='font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:'+(rc[roomVal]||'#e5e7eb')+';color:'+(fc[roomVal]||'#374151')+';';
+      roomBadge.textContent=roomVal;
+    }
+    statusWrap.appendChild(roomBadge);
+    // 코인노래방 행에만 ROOM 선택 드롭다운 표시
+    if((r.facilities||[]).includes('코인노래방')){
+      const sel=document.createElement('select');
+      sel.id='room-sel-'+rid;
+      sel.style.cssText='border:1.5px solid #d1d5db;border-radius:6px;padding:2px 5px;font-size:11px;font-family:inherit;background:#fff;cursor:pointer;';
+      sel.innerHTML='<option value="">룸배정</option><option value="1ROOM">1ROOM</option><option value="2ROOM">2ROOM</option><option value="3ROOM">3ROOM</option>';
+      sel.value=roomVal||'';
+      sel.onchange=function(){saveRoom(rid,this.value,roomBadge);};
+      statusWrap.appendChild(sel);
+    }
+    td.appendChild(statusWrap);
+
+    // 관리 버튼
+    td=tr.insertCell();
+    const div=document.createElement('div');div.style.cssText='display:flex;gap:4px;flex-wrap:wrap;';
+    (function(id,st){
+      if(st==='승인대기'){
+        const ba=document.createElement('button');ba.className='btn-sm btn-approve';ba.textContent='승인';ba.onclick=function(){doApprove(id);};div.appendChild(ba);
+        const br=document.createElement('button');br.className='btn-sm btn-reject';br.textContent='거부';br.onclick=function(){doReject(id);};div.appendChild(br);
+      } else if(st==='승인완료'){
+        const be=document.createElement('button');be.className='btn-sm btn-exit';be.textContent='퇴실입력';be.onclick=function(){openExit(id);};div.appendChild(be);
+      }
+      // 퇴실완료/거부는 버튼 없음, 삭제만
+      const bd=document.createElement('button');bd.className='btn-sm btn-delete';bd.textContent='삭제';bd.onclick=function(){openDel(id);};div.appendChild(bd);
+    })(rid,r.status);
+    td.appendChild(div);
+  });
+}
+function resetApprFilter(){['ap-from','ap-to'].forEach(id=>document.getElementById(id).value='');document.getElementById('ap-fac').value='';document.getElementById('ap-dept').value='';document.getElementById('ap-srch').value='';statusF='all';document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('active',i===0));searchApproval();}
+
+// 페이지네이션 UI
+function renderApprPager(){
+  let el=document.getElementById('appr-pager');
+  if(!el){el=document.createElement('div');el.id='appr-pager';el.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);';
+  const apprCard=document.querySelector('#page-approval .card');if(apprCard){const stabs=apprCard.querySelector('.stabs');apprCard.insertBefore(el,stabs);}}
+  const totalPages=Math.ceil(apprTotal/apprPageSize)||1;
+  el.innerHTML=
+    '<span>총 <b style="color:var(--c1)">'+apprTotal.toLocaleString()+'</b>건 / '+totalPages+'페이지</span>'+
+    '<button onclick="apprGoPage(1)" class="btn-sm btn-reject" '+(apprPage<=1?'disabled':'')+'>◀◀</button>'+
+    '<button onclick="apprGoPage('+(apprPage-1)+')" class="btn-sm btn-reject" '+(apprPage<=1?'disabled':'')+'>◀</button>'+
+    '<span style="font-weight:700;color:var(--text)">'+apprPage+' / '+totalPages+'</span>'+
+    '<button onclick="apprGoPage('+(apprPage+1)+')" class="btn-sm btn-reject" '+(apprPage>=totalPages?'disabled':'')+'>▶</button>'+
+    '<button onclick="apprGoPage('+totalPages+')" class="btn-sm btn-reject" '+(apprPage>=totalPages?'disabled':'')+'>▶▶</button>'+
+    '<select onchange="apprPageSize=parseInt(this.value);searchApproval()" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px">'+
+    [100,300,500,1000].map(n=>'<option value="'+n+'" '+(apprPageSize===n?'selected':'')+'>'+n+'건/페이지</option>').join('')+
+    '</select>';
+}
+async function apprGoPage(p){if(p<1||p>Math.ceil(apprTotal/apprPageSize))return;apprPage=p;await loadApproval(p);renderApproval();}
+
+// ── 액션 ──
+async function doApprove(id){
+  showLoad('승인 처리 중...');
+  try{
+    const now=new Date();
+    const hh=now.getHours().toString().padStart(2,'0');
+    const mm=now.getMinutes().toString().padStart(2,'0');
+    await apiFetch({action:'approve', id, approveTime:hh+'_'+mm});
+    apprCacheKey='';
+    await loadApproval(apprPage, true);
+    renderApproval();
+    // 실시간 현황도 갱신
+    await loadRealtime();
+  }catch(e){alert('❌ 승인 실패: '+e.message);}
+  finally{hideLoad();}
+}
+async function doReject(id){showLoad('거부 처리 중...');try{
+  await apiFetch({action:'reject',id});
+  apprCacheKey='';
+  await loadApproval(apprPage,true);
+  renderApproval();
+}catch(e){alert('❌ '+e.message);}finally{hideLoad();}}
+async function saveRoom(id,room,badgeEl){
+  try{
+    await apiFetch({action:'setRoom',id,room});
+    // 재로딩 없이 뱃지만 즉시 갱신
+    if(badgeEl){
+      const rc={'1ROOM':'#f28b82','2ROOM':'#fdd663','3ROOM':'#1a73e8'};
+      const fc={'1ROOM':'#fff','2ROOM':'#5f4400','3ROOM':'#fff'};
+      if(room){
+        badgeEl.style.cssText='font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:'+(rc[room]||'#e5e7eb')+';color:'+(fc[room]||'#374151')+';';
+        badgeEl.textContent=room;
+      } else {
+        badgeEl.style.cssText='';
+        badgeEl.textContent='';
+      }
+    }
+    // records 캐시도 갱신
+    for(let i=0;i<apprRecords.length;i++){
+      if(String(apprRecords[i].id)===String(id)){apprRecords[i].room=room;break;}
+    }
+    apprCacheKey='';
+  }catch(e){alert('❌ ROOM 저장 실패: '+e.message);}
+}
+function openDel(id){delId=id;document.getElementById('mo-del').classList.add('active');}
+function openExit(id){exitId=id;document.getElementById('mo-exit').classList.add('active');document.getElementById('exit-time').value='';}
+function closeMo(id){document.getElementById(id).classList.remove('active');}
+async function doDelete(){if(!delId)return;closeMo('mo-del');showLoad('삭제 중...');try{
+  await apiFetch({action:'delete',id:delId});
+  apprCacheKey='';
+  await loadApproval(apprPage,true);
+  renderApproval();
+}catch(e){alert('❌ '+e.message);}finally{hideLoad();delId=null;}}
+async function doExit(){
+  if(!exitId)return;
+  const t=document.getElementById('exit-time').value;
+  if(!t){alert('퇴실 시간 입력 필요');return;}
+  closeMo('mo-exit');showLoad('퇴실 처리 중...');
+  try{
+    await apiFetch({action:'exit',id:exitId,exitTime:t});
+    apprCacheKey='';
+    await loadApproval(apprPage,true);
+    renderApproval();
+  }catch(e){alert('❌ '+e.message);}finally{hideLoad();exitId=null;}
+}
+
+// 이용시간 계산 함수
+function calcDuration(entry,exit){
+  try{
+    if(!entry||entry==='-'||!exit||exit==='-')return '-';
+    const [eh,em]=entry.split(':').map(Number);
+    const [xh,xm]=exit.split(':').map(Number);
+    let diff=(xh*60+xm)-(eh*60+em);
+    if(diff<0)diff+=24*60;
+    if(diff<=0)return '-';
+    const h=Math.floor(diff/60), m=diff%60;
+    return h>0?h+'시간 '+m+'분':m+'분';
+  }catch(e){return '-';}
+}
+
+// ══════════════════════════════════════
+// 종합 현황 (summary 기반)
+// ══════════════════════════════════════
+function renderSummary(){
+  const total=totalItems(), visit=totalVisit(), uniqs=uniq();
+  const avgFac=visit?(total/visit).toFixed(2):0;
+  document.getElementById('ss-kpi').innerHTML=
+    mkKpi('총 이용건수',total,'시설 합계','#2563eb','#dbeafe','📊')+
+    mkKpi('총 방문횟수',visit,'신청 건수','#10b981','#d1fae5','🚶')+
+    mkKpi('이용 학생수',uniqs,'중복 제외','#f97316','#ffedd5','🎓')+
+    mkKpi('1인 평균 시설수',Number(avgFac),'건/인','#f59e0b','#fef3c7','📐');
+  mkLine('ch-ss-monthly',MONTHS,[{label:'월별 이용건수',data:(summary.byMonth||new Array(12).fill(0)),color:'#2563eb',fill:true}]);
+  const facData=FACS.map(f=>facCnt(f));
+  mkDonut('ch-ss-donut',FACS,facData,FAC_C);
+  const legendEl=document.getElementById('ss-donut-legend');
+  if(legendEl){legendEl.innerHTML=FACS.map((f,i)=>'<div class="li"><div class="ld" style="background:'+FAC_C[i]+'"></div>'+f+' <b>'+facData[i]+'</b>건</div>').join('');}
+  mkBar('ch-ss-day',DAYS.map(d=>d+'요일'),[{label:'이용건수',data:(summary.byDay||new Array(7).fill(0)),color:'#10b981'}]);
+  // 시설별 시간대별 이용건수 (line) - byHourFac 데이터 사용
+  const hours10=Array.from({length:10},(_,i)=>i+9);
+  const byHourFac=summary.byHourFac||{};
+  mkLine('ch-ss-hour-fac',hours10.map(h=>h+'시'),FACS.map((f,i)=>({
+    label:f,
+    data:hours10.map(h=>(byHourFac[f]||{})[String(h)]||0),
+    color:FAC_C[i]
+  })));
+}
+
+// ══════════════════════════════════════
+// 시설별 분석 (summary 기반)
+// ══════════════════════════════════════
+function renderFacility(){
+  const byFac=summary.byFac||{};
+  const byDept=summary.byDept||{};
+  const facCnts=FACS.map(f=>byFac[f]||0);
+  // 시설별 학생수 (byDept에서 역산)
+  const facUniq=FACS.map(f=>{let s=new Set();Object.values(byDept).forEach(d=>{if(d.facs&&d.facs[f]>0)s.add(f+'-'+Math.random());});return Object.values(byDept).filter(d=>d.facs&&d.facs[f]>0).reduce((sum,d)=>sum+d.uniq,0);});
+  document.getElementById('sf-insight').innerHTML=
+    FACS.map((f,i)=>'<div class="ins"><div class="ins-ico">'+FAC_ICO[i]+'</div><div class="ins-title">'+f+'</div><div class="ins-val" style="color:'+FAC_C[i]+'">'+facCnts[i].toLocaleString()+'건</div><div class="ins-desc">총 이용건수</div></div>').join('');
+  mkBar('ch-sf-bar',FACS,[{label:'이용건수',data:facCnts,color:FAC_C}],{merged:true});
+  // 월별 시설 추이 (byMonth 없이 summary에 byFacMonth 없으므로 전체 월 합계로 표시)
+  // 시설별 시간대별 이용건수 (종합현황과 동일)
+  const sfHours=Array.from({length:10},(_,i)=>i+9);
+  const sfByHourFac=summary.byHourFac||{};
+  mkLine('ch-sf-hour-fac2',sfHours.map(h=>h+'시'),FACS.map((f,i)=>({
+    label:f,
+    data:sfHours.map(h=>(sfByHourFac[f]||{})[String(h)]||0),
+    color:FAC_C[i]
+  })));
+  // 다중시설 조합
+  const mm=summary.multiCombos||{};
+  const mk=Object.keys(mm).sort((a,b)=>mm[b]-mm[a]).slice(0,8);
+  if(mk.length)mkBar('ch-sf-multi',mk,[{label:'이용건수',data:mk.map(k=>mm[k]),color:'#8b5cf6'}],{horiz:true});
+  // 월별 추이
+  mkLine('ch-sf-line',MONTHS,FACS.map((f,i)=>({label:f,data:(summary.byMonth||new Array(12).fill(0)).map(v=>Math.round(v*facCnts[i]/(totalItems()||1))),color:FAC_C[i]})));
+}
+
+// ══════════════════════════════════════
+// 시간·요일 분석 (summary 기반)
+// ══════════════════════════════════════
+function renderTime(){
+  const byDay=summary.byDay||new Array(7).fill(0);
+  const byMonth=summary.byMonth||new Array(12).fill(0);
+  const byHour=summary.byHour||{};
+  const maxDayIdx=byDay.indexOf(Math.max(...byDay));
+  const maxMonthIdx=byMonth.indexOf(Math.max(...byMonth));
+  const hourKeys=Object.keys(byHour).sort((a,b)=>Number(a)-Number(b));
+  const maxHourKey=hourKeys.reduce((a,b)=>byHour[a]>byHour[b]?a:b,hourKeys[0]||'9');
+  const dayTotal=byDay.reduce((s,v)=>s+v,0);
+  const byDateKeys=Object.keys(summary.byDate||{});
+  const avgPerDay=byDateKeys.length?Math.round(totalVisit()/byDateKeys.length):0;
+  document.getElementById('st-insight').innerHTML=
+    '<div class="ins"><div class="ins-ico">📅</div><div class="ins-title">최다 방문 월</div><div class="ins-val" style="color:var(--c2)">'+MONTHS[maxMonthIdx]+'</div><div class="ins-desc">'+byMonth[maxMonthIdx]+'건</div></div>'+
+    '<div class="ins"><div class="ins-ico">📆</div><div class="ins-title">최다 방문 요일</div><div class="ins-val" style="color:var(--c3)">'+DAYS[maxDayIdx]+'요일</div><div class="ins-desc">'+byDay[maxDayIdx]+'건</div></div>'+
+    '<div class="ins"><div class="ins-ico">⏰</div><div class="ins-title">피크 시간대</div><div class="ins-val" style="color:var(--c1)">'+maxHourKey+'시대</div><div class="ins-desc">'+byHour[maxHourKey]+'건</div></div>'+
+    '<div class="ins"><div class="ins-ico">📊</div><div class="ins-title">일 평균 방문</div><div class="ins-val" style="color:var(--c4)">'+avgPerDay+'회</div><div class="ins-desc">개장일 기준</div></div>';
+  // 요일별 stacked (시설별 비율로 추정)
+  const facCnts=FACS.map(f=>(summary.byFac||{})[f]||0);
+  const totFac=totalItems()||1;
+  dc('ch-st-stacked');const ctx=document.getElementById('ch-st-stacked')?.getContext('2d');if(ctx){
+    charts['ch-st-stacked']=new Chart(ctx,{type:'bar',data:{labels:DAYS.map(d=>d+'요일'),datasets:FACS.map((f,i)=>({label:f,data:byDay.map(v=>Math.round(v*facCnts[i]/totFac)),backgroundColor:FAC_C[i],borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:10}},tooltip:{...tip,callbacks:{title:items=>items[0].label,label:c=>c.dataset.label+': '+c.raw}},datalabels:{display:false}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}
+  // 시간대별
+  const hours=Array.from({length:10},(_,i)=>i+9);
+  mkBar('ch-st-hour',hours.map(h=>h+'시'),[{label:'이용건수',data:hours.map(h=>byHour[String(h)]||0),color:'#8b5cf6'}]);
+  // 월별 추이
+  mkLine('ch-st-combo',MONTHS,FACS.map((f,i)=>({label:f,data:byMonth.map(v=>Math.round(v*facCnts[i]/totFac)),color:FAC_C[i]})));
+}
+
+// ══════════════════════════════════════
+// 학과·계열 분석 (summary 기반)
+// ══════════════════════════════════════
+function renderDept(){
+  const byDept=summary.byDept||{};
+  const sorted=Object.entries(byDept).sort((a,b)=>b[1].visit-a[1].visit).slice(0,30);
+  const maxV=sorted[0]?.[1].visit||1;
+  const dl=document.getElementById('dept-list');
+  dl.innerHTML=sorted.map((e,i)=>'<div class="dept-row-item"><span class="dr-rank">'+(i+1)+'</span><span class="dr-name">'+e[0]+'</span><div class="dr-bar"><div class="dr-bar-fill" style="width:'+(e[1].visit/maxV*100)+'%"></div></div><span class="dr-v">'+e[1].visit+'</span><span class="dr-u">'+e[1].uniq+'명</span></div>').join('');
+  // 계열별 집계
+  const series={};
+  Object.entries(byDept).forEach(([dept,d])=>{const s=getSeries(dept);series[s]=(series[s]||0)+d.total;});
+  const serSorted=Object.entries(series).sort((a,b)=>b[1]-a[1]);
+  const serColors=['#2563eb','#f97316','#10b981','#f59e0b'];
+  mkBar('ch-dept-series',serSorted.map(e=>e[0]),[{label:'이용건수',data:serSorted.map(e=>e[1]),color:serColors}],{horiz:true,merged:true});
+  const tot=serSorted.reduce((s,e)=>s+e[1],0);
+  document.getElementById('series-rows').innerHTML=serSorted.map((e,i)=>'<div class="dr-row"><div class="dr-lbl"><div class="dr-dot" style="background:'+serColors[i%serColors.length]+'"></div>'+e[0]+'</div><span class="dr-pct">'+(tot?(e[1]/tot*100).toFixed(1):0)+'%</span><span class="dr-cnt">'+e[1]+'건</span></div>').join('');
+}
+
+// ══════════════════════════════════════
+// 이용자 분석 (summary 기반)
+// ══════════════════════════════════════
+function renderUser(){
+  const rd=summary.revisitDist||{1:0,2:0,3:0,4:0,'5+':0};
+  const avg=summary.avgVisit||'0';
+  const uniqs=uniq(), visit=totalVisit();
+  const repeat=Object.entries(rd).filter(([k])=>k!=='1').reduce((s,[,v])=>s+v,0);
+  document.getElementById('su-insight').innerHTML=
+    '<div class="ins"><div class="ins-ico">🔄</div><div class="ins-title">1인 평균 방문</div><div class="ins-val" style="color:var(--c1)">'+avg+'회</div><div class="ins-desc">'+visit+'회 ÷ '+uniqs+'명</div></div>'+
+    '<div class="ins"><div class="ins-ico">🔁</div><div class="ins-title">재방문 학생</div><div class="ins-val" style="color:var(--c3)">'+repeat+'명</div><div class="ins-desc">2회 이상 방문</div></div>'+
+    '<div class="ins"><div class="ins-ico">🆕</div><div class="ins-title">1회 방문 학생</div><div class="ins-val" style="color:var(--c4)">'+(rd[1]||0)+'명</div><div class="ins-desc">신규 방문</div></div>'+
+    '<div class="ins"><div class="ins-ico">⭐</div><div class="ins-title">5회+ 재방문</div><div class="ins-val" style="color:var(--c2)">'+(rd['5+']||0)+'명</div><div class="ins-desc">충성 이용자</div></div>';
+  const rvLabels=['1회','2회','3회','4회','5회+'];const rvData=[rd[1]||0,rd[2]||0,rd[3]||0,rd[4]||0,rd['5+']||0];const rvColors=['#dbeafe','#bfdbfe','#93c5fd','#60a5fa','#2563eb'];
+  mkBar('ch-su-revisit',rvLabels,[{label:'학생수',data:rvData,color:rvColors}],{merged:true});
+  // 다중시설 조합 (multiCombos 활용)
+  const mm=summary.multiCombos||{};
+  const comboSorted=Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(comboSorted.length)mkBar('ch-su-combo',comboSorted.map(e=>e[0]),[{label:'이용건수',data:comboSorted.map(e=>e[1]),color:'#8b5cf6'}],{horiz:true});
+  // 월별 방문 (byMonth 사용)
+  mkBar('ch-su-monthly',MONTHS,[{label:'방문학생',data:(summary.byMonth||new Array(12).fill(0)),color:'#f97316'}]);
+}
+
+// ══════════════════════════════════════
+// 학과별 상세
+// ══════════════════════════════════════
+let sdData=[], sdSummary=null;
+async function applyDetailFilter(){
+  const from=document.getElementById('sd-from')?.value||'';
+  const to=document.getElementById('sd-to')?.value||'';
+  if(!from&&!to){renderStatDetail();return;}
+  showLoad('집계 중...');
+  try{
+    const res=await apiFetch({action:'getSummary',from:from||YR[curYear].start,to:to||YR[curYear].end});
+    sdSummary=res;
+    renderStatDetail();
+  }catch(e){alert('❌ '+e.message);}
+  finally{hideLoad();}
+}
+function resetDetailFilter(){
+  ['sd-from','sd-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  sdSummary=null;
+  renderStatDetail();
+}
+function renderStatDetail(){
+  const src=sdSummary||summary;
+  const byDept=src.byDept||{};
+  sdData=Object.entries(byDept).map(([dept,d])=>({
+    dept, series:getSeries(dept), visit:d.visit, uniqSize:d.uniq,
+    facs:FACS.map(f=>d.facs[f]||0), total:d.total
+  }));
+  // insight
+  const totVisit=sdData.reduce((s,d)=>s+d.visit,0);
+  const totUniq=(sdSummary||summary).uniqueCount||0;
+  document.getElementById('sd-insight').innerHTML=
+    '<div class="ins"><div class="ins-ico">🏫</div><div class="ins-title">참여 학과수</div><div class="ins-val" style="color:var(--c1)">'+sdData.length+'개</div></div>'+
+    '<div class="ins"><div class="ins-ico">🚶</div><div class="ins-title">총 방문횟수</div><div class="ins-val" style="color:var(--c2)">'+totVisit+'회</div></div>'+
+    '<div class="ins"><div class="ins-ico">🎓</div><div class="ins-title">이용 학생수</div><div class="ins-val" style="color:var(--c3)">'+totUniq+'명</div></div>'+
+    '<div class="ins"><div class="ins-ico">📊</div><div class="ins-title">총 이용건수</div><div class="ins-val" style="color:var(--c4)">'+sdData.reduce((s,d)=>s+d.total,0)+'건</div></div>';
+  // 계열 필터 버튼
+  const serSet=[...new Set(sdData.map(d=>d.series))].sort();
+  const btnsCont=document.getElementById('sd-series-btns');
+  if(btnsCont&&btnsCont.childElementCount===0){
+    btnsCont.innerHTML='<button class="filter-btn on" onclick="sdFilter(\'\',this)">전체</button>'+
+      serSet.map(s=>'<button class="filter-btn" onclick="sdFilter(\''+s+'\',this)">'+s+'</button>').join('');
+  }
+  // 검색 · 필터
+  const srch=(document.getElementById('sd-search')?.value||'').trim().toLowerCase();
+  let filtered=sdData;
+  if(sdSeriesF)filtered=filtered.filter(d=>d.series===sdSeriesF);
+  if(srch)filtered=filtered.filter(d=>d.dept.includes(srch));
+  // 정렬
+  filtered.sort((a,b)=>{
+    const va=sdSortKey==='dept'?a.dept:sdSortKey==='series'?a.series:sdSortKey==='visit'?a.visit:sdSortKey==='uniq'?a.uniqSize:sdSortKey.startsWith('f')?a.facs[parseInt(sdSortKey[1])]:a.total;
+    const vb=sdSortKey==='dept'?b.dept:sdSortKey==='series'?b.series:sdSortKey==='visit'?b.visit:sdSortKey==='uniq'?b.uniqSize:sdSortKey.startsWith('f')?b.facs[parseInt(sdSortKey[1])]:b.total;
+    if(typeof va==='string')return sdSortAsc?va.localeCompare(vb):vb.localeCompare(va);
+    return sdSortAsc?va-vb:vb-va;
+  });
+  const maxTotal=Math.max(...filtered.map(d=>d.total),1);
+  document.getElementById('sd-count').textContent=filtered.length+'개 학과';
+  // tbody
+  const tb=document.getElementById('sd-tbody');
+  tb.innerHTML=filtered.map((d,i)=>'<tr><td>'+
+    (i<3?['🥇','🥈','🥉'][i]:i+1)+'</td><td style="font-weight:600">'+d.dept+'</td><td><span style="background:var(--c1l);color:var(--c1);border-radius:8px;padding:2px 7px;font-size:10px;font-weight:700">'+d.series+'</span></td>'+
+    '<td class="dd-num">'+d.visit+'</td><td class="dd-num">'+d.uniqSize+'</td>'+
+    FACS.map((_,fi)=>'<td class="dd-num">'+d.facs[fi]+'</td>').join('')+
+    '<td class="dd-num" style="font-weight:700;color:var(--c1)">'+d.total+'</td>'+
+    '<td><div class="dd-ratio-bar">'+FACS.map((_,fi)=>'<div style="flex:'+(d.facs[fi]||0)+';background:'+FAC_C[fi]+'"></div>').join('')+'</div></td>'+
+    '</tr>').join('');
+  // tfoot
+  const tf=document.getElementById('sd-tfoot');
+  const sumV=filtered.reduce((s,d)=>s+d.visit,0), sumU=filtered.reduce((s,d)=>s+d.uniqSize,0), sumT=filtered.reduce((s,d)=>s+d.total,0);
+  tf.innerHTML='<tr><td colspan="3">합계</td><td class="dd-num">'+sumV+'</td><td class="dd-num">'+sumU+'</td>'+FACS.map((_,fi)=>'<td class="dd-num">'+filtered.reduce((s,d)=>s+d.facs[fi],0)+'</td>').join('')+'<td class="dd-num">'+sumT+'</td><td></td></tr>';
+}
+function sdSort(key){if(sdSortKey===key)sdSortAsc=!sdSortAsc;else{sdSortKey=key;sdSortAsc=false;}renderStatDetail();}
+function sdFilter(s,btn){sdSeriesF=s;document.querySelectorAll('#sd-series-btns .filter-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderStatDetail();}
+
+
+// ── 인쇄 함수 ──
+function printPage(pageId, title) {
+  // print-header 내용 채우기
+  const y = YR[curYear];
+  const ph = document.getElementById('ph-sub-' + pageId);
+  if (ph) ph.textContent = y.label + '  |  기준: ' + new Date().toLocaleDateString('ko-KR') +
+    '  |  총 이용건수 ' + totalItems().toLocaleString() + '건  |  방문횟수 ' + totalVisit().toLocaleString() + '회  |  이용학생 ' + uniq().toLocaleString() + '명';
+
+  // 현재 페이지에 print-target 클래스 추가
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('print-target'));
+  document.getElementById('page-' + pageId)?.classList.add('print-target');
+
+  // print-header 표시
+  document.querySelectorAll('.print-header').forEach(h => h.style.display = 'none');
+  const header = document.getElementById('ph-' + pageId);
+  if (header) header.style.display = 'block';
+
+  window.print();
+
+  // 원복
+  setTimeout(() => {
+    document.querySelectorAll('.print-header').forEach(h => h.style.display = '');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('print-target'));
+    document.getElementById('page-' + pageId)?.classList.add('print-target');
+  }, 500);
+}
+
+
+// ── 통계 필터 상태 ──
+const statFilters = {
+  ov:  {from:'', to:'', dept:'', series:''},
+  ss:  {from:'', to:'', dept:'', series:''},
+  sf:  {from:'', to:'', dept:'', series:''},
+  st:  {from:'', to:'', dept:'', series:''},
+};
+
+// 통계용 summary 재요청 (필터 적용)
+async function applyStatFilter(prefix) {
+  const f = statFilters[prefix];
+  f.from   = document.getElementById(prefix+'-from')?.value  || '';
+  f.to     = document.getElementById(prefix+'-to')?.value    || '';
+  f.dept   = document.getElementById(prefix+'-dept')?.value  || '';
+  f.series = document.getElementById(prefix+'-series')?.value|| '';
+
+  const y = YR[curYear];
+  const from = f.from || y.start;
+  const to   = f.to   || y.end;
+
+  showLoad('필터 적용 중...');
+  try {
+    // 기간이 기본값과 다를 때만 서버 재호출, 아니면 캐시 사용
+    const defaultFrom = y.start, defaultTo = y.end;
+    let base = summary;
+    if (f.from && f.to && (f.from !== defaultFrom || f.to !== defaultTo)) {
+      base = await apiFetch({action:'getSummary', from, to});
+      // uniq 클라이언트 계산 (구버전 서버 대응)
+      calcUniqInByDept(base);
+    }
+    // 학과/계열 필터 적용
+    const filtered = (f.dept || f.series) ? filterSummaryByDept(base, f.dept, f.series) : base;
+    const renderMap = {
+      ov: ()=>renderOverviewWith(filtered),
+      ss: ()=>renderSummaryWith(filtered),
+      sf: ()=>renderFacilityWith(filtered),
+      st: ()=>renderTimeWith(filtered),
+    };
+    renderMap[prefix]?.();
+  } catch(e) {
+    alert('❌ 필터 적용 실패: ' + e.message);
+  } finally {
+    hideLoad();
+  }
+}
+
+function resetStatFilter(prefix) {
+  ['from','to','dept','series'].forEach(k => {
+    const el = document.getElementById(prefix+'-'+k);
+    if(el) el.value = '';
+    statFilters[prefix][k] = '';
+  });
+  // 원래 summary로 재렌더
+  const renderMap = {
+    ov: renderOverview, ss: renderSummary,
+    sf: renderFacility, st: renderTime,
+  };
+  renderMap[prefix]?.();
+}
+
+// byDept를 학과/계열로 필터링해서 새 summary 객체 반환
+function calcUniqInByDept(s) {
+  // byDept.uniq가 없거나 0인 경우 visit 값으로 보정
+  Object.values(s.byDept||{}).forEach(d => {
+    if (!d.uniq && d.visit) d.uniq = d.visit;
+  });
+}
+
+function filterSummaryByDept(src, deptF, seriesF) {
+  if (!deptF && !seriesF) return src;
+  const newByDept = {};
+  let newTotal=0, newVisit=0, newUniq=0;
+  const newByFac    = {'인생네컷':0,'코인노래방':0,'탁구장':0,'헬스장':0};
+  const newByDay    = [0,0,0,0,0,0,0];
+  const newByMonth  = new Array(12).fill(0);
+  const newByHour   = {};
+  const newByHourFac= {};
+
+  Object.entries(src.byDept||{}).forEach(([dept,d]) => {
+    const series = getSeries(dept);
+    if (deptF   && dept   !== deptF)   return;
+    if (seriesF && series !== seriesF) return;
+    newByDept[dept] = d;
+    newVisit  += d.visit||0;
+    newTotal  += d.total||0;
+    newUniq   += d.uniq||0;
+    // 시설별
+    FACS.forEach(f => { newByFac[f] += d.facs[f]||0; });
+    // 요일별
+    (d.byDay||[]).forEach((v,i) => { newByDay[i] += v; });
+    // 월별
+    (d.byMonth||[]).forEach((v,i) => { newByMonth[i] += v; });
+    // 시간대별
+    Object.entries(d.byHour||{}).forEach(([h,v]) => {
+      newByHour[h] = (newByHour[h]||0) + v;
+    });
+  });
+
+  // byHourFac 재계산 (시설 비율로 근사)
+  FACS.forEach(f => {
+    newByHourFac[f] = {};
+    const facTotal = newByFac[f]||0;
+    const srcTotal = (src.byFac||{})[f]||1;
+    const ratio = facTotal / srcTotal;
+    Object.entries(src.byHourFac&&src.byHourFac[f]||{}).forEach(([h,v]) => {
+      newByHourFac[f][h] = Math.round(v * ratio);
+    });
+  });
+
+  return {
+    ...src,
+    byDept:      newByDept,
+    total:       newTotal,
+    visit:       newVisit,
+    uniqueCount: newUniq,
+    byFac:       newByFac,
+    byDay:       newByDay,
+    byMonth:     newByMonth,
+    byHour:      newByHour,
+    byHourFac:   newByHourFac,
+  };
+}
+
+// 각 렌더 함수의 "With" 버전 (필터된 summary 사용)
+function renderOverviewWith(s)  { const bk=summary; summary=s; renderOverview(); summary=bk; }
+function renderSummaryWith(s)   { const bk=summary; summary=s; renderSummary();   summary=bk; }
+function renderFacilityWith(s)  { const bk=summary; summary=s; renderFacility();  summary=bk; }
+function renderTimeWith(s)      { const bk=summary; summary=s; renderTime();      summary=bk; }
+
+// 통계 필터 학과 목록 채우기
+function populateStatDeptSels() {
+  const depts = Object.keys(summary.byDept||{}).sort();
+  ['ov','ss','sf','st'].forEach(prefix => {
+    const sel = document.getElementById(prefix+'-dept');
+    if (!sel) return;
+    const cur = sel.value;
+    // 항상 최신 목록으로 갱신
+    sel.innerHTML = '<option value="">전체 학과</option>';
+    depts.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d;
+      sel.appendChild(o);
+    });
+    sel.value = cur; // 선택값 유지
+  });
+}
+
+// ══════════════════════════════════════
+// 📺 대시보드 모드
+// ══════════════════════════════════════
+let dbCurSlide = 0;
+const DB_TOTAL = 4;
+let dbAutoTimer = null;
+let dbInterval = 10000;
+let dbCharts = {};
+
+function dcDb(id){ if(dbCharts[id]){dbCharts[id].destroy();delete dbCharts[id];} }
+
+function mkDbBar(id, labels, datasets, opts={}) {
+  dcDb(id);
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  const n = labels.length;
+  const barThickness = n<=4?50:n<=7?36:n<=12?26:n<=20?18:12;
+  let ds;
+  if(datasets.length===1||opts.merged){
+    const d=datasets[0];
+    const colors=Array.isArray(d.color)?d.color:labels.map((_,i)=>d.color||FAC_C[i%4]);
+    ds=[{label:d.label||'',data:d.data||d,backgroundColor:colors,borderRadius:5,borderSkipped:false}];
+  } else {
+    ds=datasets.map((d,i)=>({label:d.label||'',data:d.data||d,backgroundColor:d.color||FAC_C[i%4],borderRadius:5,borderSkipped:false}));
+  }
+  const darkTip={backgroundColor:'#1e293b',borderColor:'#334155',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:8};
+  dbCharts[id]=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:ds},
+    options:{indexAxis:opts.horiz?'y':'x',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:datasets.length>1&&!!opts.legend,labels:{font:{size:10},color:'rgba(255,255,255,.6)',boxWidth:10}},
+        tooltip:darkTip,
+        datalabels:{display:!opts.noLabel,anchor:opts.horiz?'end':'end',align:opts.horiz?'end':'end',
+          color:'rgba(255,255,255,.6)',font:{size:9,weight:'600'},formatter:v=>v>0?v:'',clip:false}
+      },
+      datasets:{bar:{barThickness:opts.barThickness||barThickness}},
+      scales:{
+        [opts.horiz?'x':'y']:{beginAtZero:true,ticks:{font:{size:9},color:'rgba(255,255,255,.4)'},grid:{color:'rgba(255,255,255,.06)'},stacked:!!opts.stacked},
+        [opts.horiz?'y':'x']:{ticks:{font:{size:9},color:'rgba(255,255,255,.5)'},grid:{display:false},stacked:!!opts.stacked}
+      }
+    }
+  });
+}
+
+function mkDbLine(id, labels, datasets) {
+  dcDb(id);
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  const darkTip={backgroundColor:'#1e293b',borderColor:'#334155',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:8};
+  dbCharts[id]=new Chart(ctx,{type:'line',
+    data:{labels,datasets:datasets.map((d,i)=>({label:d.label||'',data:d.data,borderColor:d.color||FAC_C[i%4],backgroundColor:(d.color||FAC_C[i%4])+'22',fill:false,tension:.38,pointRadius:2.5,pointHoverRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:datasets.length>1,labels:{font:{size:10},color:'rgba(255,255,255,.6)',boxWidth:10}},tooltip:darkTip,datalabels:{display:false}},
+      scales:{
+        y:{beginAtZero:true,ticks:{font:{size:9},color:'rgba(255,255,255,.4)'},grid:{color:'rgba(255,255,255,.06)'}},
+        x:{ticks:{font:{size:9},color:'rgba(255,255,255,.4)'},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderDbSlide(idx) {
+  if(!summary || !summary.byFac) return;
+  const s = summary;
+
+  if(idx===0) { // 슬라이드 1: KPI + 시설 + 요일
+    // KPI
+    const total=totalItems(), visit=totalVisit(), uniqs=uniq();
+    const avgFac=visit?(total/visit).toFixed(1):0;
+    const kpiData=[
+      {label:'총 이용건수', val:total.toLocaleString(), sub:'시설 합계', color:'#60a5fa'},
+      {label:'총 방문횟수', val:visit.toLocaleString(), sub:'신청 건수', color:'#34d399'},
+      {label:'이용 학생수', val:uniqs.toLocaleString(), sub:'중복 제외', color:'#fb923c'},
+      {label:'1인 평균 시설', val:avgFac, sub:'건/인', color:'#fbbf24'},
+    ];
+    document.getElementById('db-kpi').innerHTML=kpiData.map(k=>`
+      <div class="db-kpi">
+        <div class="db-kpi-label">${k.label}</div>
+        <div class="db-kpi-val" style="color:${k.color}">${k.val}</div>
+        <div class="db-kpi-sub">${k.sub}</div>
+      </div>`).join('');
+    mkDbBar('db-ch-fac', FACS, [{label:'이용건수',data:FACS.map(f=>(s.byFac||{})[f]||0),color:FAC_C}], {merged:true});
+    mkDbBar('db-ch-day', DAYS.map(d=>d+'요일'), [{label:'이용건수',data:(s.byDay||new Array(7).fill(0)),color:'#34d399'}]);
+  }
+  else if(idx===1) { // 슬라이드 2: 시간대 + 시설별 시간대 + 월별
+    const byHour=s.byHour||{};
+    const hours=Array.from({length:10},(_,i)=>i+9);
+    mkDbBar('db-ch-hour', hours.map(h=>h+'시'), [{label:'이용건수',data:hours.map(h=>byHour[String(h)]||0),color:'#8b5cf6'}]);
+    const byHourFac=s.byHourFac||{};
+    mkDbLine('db-ch-hour-fac', hours.map(h=>h+'시'), FACS.map((f,i)=>({label:f,data:hours.map(h=>(byHourFac[f]||{})[String(h)]||0),color:FAC_C[i]})));
+    mkDbLine('db-ch-month', MONTHS, [{label:'월별 이용건수',data:(s.byMonth||new Array(12).fill(0)),color:'#2563eb'}]);
+  }
+  else if(idx===2) { // 슬라이드 3: 학과 Top20 + 계열별
+    const byDept=s.byDept||{};
+    const sorted=Object.entries(byDept).sort((a,b)=>b[1].total-a[1].total).slice(0,20);
+    const maxV=sorted[0]?.[1].total||1;
+    document.getElementById('db-dept-list').innerHTML=sorted.map((e,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+        <span style="font-family:monospace;font-size:10px;color:rgba(255,255,255,.3);width:18px;">${i+1}</span>
+        <span style="flex:1;font-size:11px;color:rgba(255,255,255,.8);">${e[0]}</span>
+        <div style="width:80px;height:5px;background:rgba(255,255,255,.08);border-radius:3px;flex-shrink:0;">
+          <div style="width:${(e[1].total/maxV*100).toFixed(0)}%;height:100%;border-radius:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);"></div>
+        </div>
+        <span style="font-family:monospace;font-size:11px;color:#60a5fa;width:32px;text-align:right;font-weight:700;">${e[1].total}</span>
+      </div>`).join('');
+    const series={};
+    Object.entries(byDept).forEach(([dept,d])=>{const sv=getSeries(dept);series[sv]=(series[sv]||0)+d.total;});
+    const serSorted=Object.entries(series).sort((a,b)=>b[1]-a[1]);
+    const serColors=['#2563eb','#f97316','#10b981','#f59e0b'];
+    mkDbBar('db-ch-series', serSorted.map(e=>e[0]), [{label:'이용건수',data:serSorted.map(e=>e[1]),color:serColors}], {horiz:true,merged:true,noLabel:false});
+    const tot=serSorted.reduce((s,e)=>s+e[1],0);
+    document.getElementById('db-series-rows').innerHTML=serSorted.map((e,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.7);">
+          <div style="width:8px;height:8px;border-radius:2px;background:${serColors[i%serColors.length]};flex-shrink:0;"></div>${e[0]}
+        </div>
+        <span style="font-family:monospace;font-size:11px;font-weight:700;color:rgba(255,255,255,.8);">${tot?(e[1]/tot*100).toFixed(1):0}% (${e[1]}건)</span>
+      </div>`).join('');
+  }
+  else if(idx===3) { // 슬라이드 4: 재방문 + 조합
+    const rd=s.revisitDist||{1:0,2:0,3:0,4:0,'5+':0};
+    const rvLabels=['1회','2회','3회','4회','5회+'];
+    const rvData=[rd[1]||0,rd[2]||0,rd[3]||0,rd[4]||0,rd['5+']||0];
+    const rvColors=['rgba(219,234,254,.6)','rgba(191,219,254,.8)','rgba(147,197,253,.9)','#60a5fa','#2563eb'];
+    mkDbBar('db-ch-revisit', rvLabels, [{label:'학생수',data:rvData,color:rvColors}], {merged:true});
+    const repeat=(rd[2]||0)+(rd[3]||0)+(rd[4]||0)+(rd['5+']||0);
+    document.getElementById('db-revisit-info').innerHTML=[
+      {label:'1인 평균 방문',val:(s.avgVisit||0)+'회',color:'#60a5fa'},
+      {label:'재방문 학생',val:repeat+'명',color:'#34d399'},
+      {label:'5회+ 충성',val:(rd['5+']||0)+'명',color:'#fb923c'},
+    ].map(k=>`<div style="background:rgba(255,255,255,.05);border-radius:8px;padding:8px 12px;text-align:center;">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);">${k.label}</div>
+      <div style="font-size:18px;font-weight:800;color:${k.color};">${k.val}</div>
+    </div>`).join('');
+    const mm=s.multiCombos||{};
+    const comboSorted=Object.entries(mm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    if(comboSorted.length) mkDbBar('db-ch-combo',comboSorted.map(e=>e[0]),[{label:'이용건수',data:comboSorted.map(e=>e[1]),color:'#8b5cf6'}],{horiz:true});
+  }
+}
+
+function dbGoSlide(idx) {
+  document.querySelectorAll('.db-slide').forEach((s,i)=>{
+    s.classList.toggle('active',i===idx);
+  });
+  document.querySelectorAll('#db-nav .db-nav-dot').forEach((d,i)=>{
+    d.classList.toggle('active',i===idx);
+  });
+  document.getElementById('db-slide-lbl').textContent=(idx+1)+' / '+DB_TOTAL;
+  dbCurSlide=idx;
+  renderDbSlide(idx);
+}
+function dbNext(){ dbGoSlide((dbCurSlide+1)%DB_TOTAL); }
+function dbPrev(){ dbGoSlide((dbCurSlide-1+DB_TOTAL)%DB_TOTAL); }
+
+function toggleDbAuto(){
+  if(dbAutoTimer){
+    clearInterval(dbAutoTimer); dbAutoTimer=null;
+    document.getElementById('db-auto-btn').textContent='⏵ 자동전환';
+    document.getElementById('db-auto-badge').textContent='';
+  } else {
+    dbAutoTimer=setInterval(dbNext, dbInterval);
+    document.getElementById('db-auto-btn').textContent='⏸ 정지';
+    document.getElementById('db-auto-badge').textContent='⏵ '+Math.round(dbInterval/1000)+'초 자동전환 중';
+  }
+}
+function updateDbInterval(){
+  dbInterval=parseInt(document.getElementById('db-interval').value);
+  if(dbAutoTimer){ clearInterval(dbAutoTimer); dbAutoTimer=setInterval(dbNext,dbInterval); }
+}
+
+function openDashboard(){
+  if(!summary || !summary.byFac){ alert('통계 데이터를 먼저 로드하세요.\n화면 우상단 새로고침 후 잠시 기다려주세요.'); return; }
+  const overlay=document.getElementById('db-overlay');
+  overlay.classList.add('active');
+  // 네비 점 생성
+  const nav=document.getElementById('db-nav');
+  nav.innerHTML=Array.from({length:DB_TOTAL},(_,i)=>`<div class="db-nav-dot${i===0?' active':''}" onclick="dbGoSlide(${i})"></div>`).join('');
+  // 학년도 라벨
+  document.getElementById('db-yr-label').textContent=YR[curYear]?.label||'';
+  // footer
+  document.getElementById('db-footer-info').textContent='마지막 집계: '+new Date().toLocaleString('ko-KR');
+  // 첫 슬라이드 렌더
+  dbCurSlide=0;
+  document.querySelectorAll('.db-slide').forEach((s,i)=>s.classList.toggle('active',i===0));
+  renderDbSlide(0);
+  // ESC 닫기
+  document.onkeydown=(e)=>{
+    if(e.key==='Escape') closeDashboard();
+    if(e.key==='ArrowRight') dbNext();
+    if(e.key==='ArrowLeft')  dbPrev();
+  };
+}
+
+function closeDashboard(){
+  document.getElementById('db-overlay').classList.remove('active');
+  if(dbAutoTimer){ clearInterval(dbAutoTimer); dbAutoTimer=null; }
+  document.onkeydown=null;
+  // 대시보드 차트 정리
+  Object.keys(dbCharts).forEach(k=>{dbCharts[k].destroy();delete dbCharts[k];});
+}
+
+// ══════════════════════════════════════
+// 🎓 학번별 통계 v2 — 탭 전환
+// ══════════════════════════════════════
+let su2AllRecords = [];
+let su2Loaded     = false;
+let top100Data    = [];
+let panelCharts   = {};
+
+function su2Switch(tab, btn) {
+  document.querySelectorAll('.su2-tab').forEach(b => {
+    b.style.borderBottomColor = 'transparent';
+    b.style.color = 'var(--muted)';
+  });
+  btn.style.borderBottomColor = 'var(--c1)';
+  btn.style.color = 'var(--c1)';
+  document.getElementById('su2-cohort').style.display = tab === 'cohort' ? '' : 'none';
+  document.getElementById('su2-top').style.display    = tab === 'top'    ? '' : 'none';
+}
+
+async function loadAllRecordsForSu2(force) {
+  if (su2Loaded && !force) return su2AllRecords;
+  showLoad('전체 데이터 집계 중...');
+  try {
+    const from = '2010-01-01';
+    const to   = new Date().toISOString().split('T')[0];
+    const res  = await apiFetch({action:'getAll', from, to, pageSize:5000, pageNum:1});
+    su2AllRecords = res.records || [];
+    su2Loaded = true;
+    return su2AllRecords;
+  } finally { hideLoad(); }
+}
+
+// ── 탭1: 입학년도별 통계
+let cohortData = {};
+
+async function loadCohortStats() {
+  const btn = document.getElementById('cohort-load-btn');
+  btn.disabled = true; btn.textContent = '⏳ 집계 중...';
+  try {
+    await loadAllRecordsForSu2();
+    buildCohortData();
+    renderCohort();
+    document.getElementById('cohort-empty').style.display = 'none';
+    document.getElementById('cohort-result').style.display = '';
+  } catch(e) { alert('❌ 집계 실패: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '🔄 재집계'; }
+}
+
+function buildCohortData() {
+  cohortData = {};
+  su2AllRecords.forEach(r => {
+    const sid  = String(r.studentId || '').trim();
+    const year = sid.length >= 4 ? sid.slice(0, 4) : '미상';
+    const yNum = parseInt(year);
+    const key  = (yNum >= 2010 && yNum <= new Date().getFullYear()) ? year : '기타';
+    if (!cohortData[key]) cohortData[key] = { visit:0, students:new Set(), facs:{인생네컷:0,코인노래방:0,탁구장:0,헬스장:0}, total:0 };
+    const d = cohortData[key];
+    d.visit++;
+    d.students.add(sid);
+    (r.facilities || []).forEach(f => { if (d.facs[f] !== undefined) { d.facs[f]++; d.total++; } });
+  });
+}
+
+function renderCohort() {
+  const years = Object.keys(cohortData).filter(y=>y!=='기타').sort((a,b)=>b-a);
+  if (cohortData['기타']) years.push('기타');
+  const palette = ['#2563eb','#f97316','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#84cc16','#ec4899','#14b8a6','#f43f5e','#a855f7','#22d3ee','#fb923c','#4ade80','#facc15'];
+
+  const totalVisit = Object.values(cohortData).reduce((s,d)=>s+d.visit,0);
+  const totalUniq  = new Set(su2AllRecords.map(r=>r.studentId)).size;
+  const totalYears = years.filter(y=>y!=='기타').length;
+  const mostActive = years.length ? years.reduce((a,b)=>(cohortData[a]?.visit||0)>=(cohortData[b]?.visit||0)?a:b) : '—';
+  document.getElementById('cohort-kpi').innerHTML=[
+    {label:'총 방문횟수',val:totalVisit.toLocaleString(),sub:'전체 기간',color:'#2563eb',bg:'#eff6ff',ico:'📋'},
+    {label:'총 이용 학생수',val:totalUniq.toLocaleString(),sub:'중복 제거',color:'#10b981',bg:'#f0fdf4',ico:'🎓'},
+    {label:'입학년도 수',val:totalYears+'개',sub:'코호트',color:'#8b5cf6',bg:'#faf5ff',ico:'📅'},
+    {label:'최다 방문 학번',val:mostActive+'학번',sub:(cohortData[mostActive]?.visit||0)+'회',color:'#f97316',bg:'#fff7ed',ico:'🏆'},
+  ].map(k=>mkKpi(k.label,k.val,k.sub,k.color,k.bg,k.ico)).join('');
+
+  // 방문횟수 차트
+  dc('ch-cohort-visit');
+  const ctx1=document.getElementById('ch-cohort-visit')?.getContext('2d');
+  if(ctx1) charts['ch-cohort-visit']=new Chart(ctx1,{type:'bar',
+    data:{labels:years,datasets:[{label:'방문횟수',data:years.map(y=>cohortData[y].visit),backgroundColor:years.map((_,i)=>palette[i%palette.length]),borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tip},
+      datalabels:{display:true,anchor:'end',align:'end',color:'#374151',font:{size:10,weight:'700'},formatter:v=>v.toLocaleString()}},
+      scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{font:{size:10}}}}}});
+
+  // 학생수 차트
+  dc('ch-cohort-uniq');
+  const ctx2=document.getElementById('ch-cohort-uniq')?.getContext('2d');
+  if(ctx2) charts['ch-cohort-uniq']=new Chart(ctx2,{type:'bar',
+    data:{labels:years,datasets:[{label:'학생수',data:years.map(y=>cohortData[y].students.size),backgroundColor:years.map((_,i)=>palette[i%palette.length]+'bb'),borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tip},
+      datalabels:{display:true,anchor:'end',align:'end',color:'#374151',font:{size:10,weight:'700'},formatter:v=>v+'명'}},
+      scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{font:{size:10}}}}}});
+
+  // stacked 차트
+  dc('ch-cohort-fac-stack');
+  const ctx3=document.getElementById('ch-cohort-fac-stack')?.getContext('2d');
+  if(ctx3) charts['ch-cohort-fac-stack']=new Chart(ctx3,{type:'bar',
+    data:{labels:years,datasets:FACS.map((f,i)=>({label:f,data:years.map(y=>cohortData[y].facs[f]||0),backgroundColor:FAC_C[i],borderRadius:2,borderSkipped:false}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:10}},tooltip:{...tip},datalabels:{display:false}},
+      scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,beginAtZero:true,ticks:{font:{size:10}}}}}});
+
+  // 테이블
+  const maxV=Math.max(...years.map(y=>cohortData[y].visit),1);
+  document.getElementById('cohort-tbody').innerHTML=years.map((y,i)=>{
+    const d=cohortData[y]; const uniq=d.students.size;
+    const avg=uniq?(d.visit/uniq).toFixed(1):'0';
+    const barW=Math.round(d.visit/maxV*100);
+    const medals=['🥇','🥈','🥉'];
+    return `<tr>
+      <td style="font-weight:700;">${i<3?medals[i]:i+1} <span style="background:var(--c1l);color:var(--c1);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;">${y}학번</span></td>
+      <td class="dd-num">${d.visit.toLocaleString()}</td>
+      <td class="dd-num">${uniq}명</td>
+      <td class="dd-num" style="color:var(--c2);font-weight:700;">${avg}회</td>
+      ${FACS.map(f=>`<td class="dd-num">${d.facs[f]||0}</td>`).join('')}
+      <td class="dd-num" style="font-weight:700;color:var(--c1);">${d.total.toLocaleString()}</td>
+      <td><div style="display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;width:${barW}px;max-width:100px;min-width:4px;">
+        ${FACS.map((f,fi)=>`<div style="flex:${d.facs[f]||0};background:${FAC_C[fi]};"></div>`).join('')}
+      </div></td>
+    </tr>`;
+  }).join('');
+  const sumV=years.reduce((s,y)=>s+cohortData[y].visit,0);
+  const sumT=years.reduce((s,y)=>s+cohortData[y].total,0);
+  document.getElementById('cohort-tfoot').innerHTML=`<tr>
+    <td>합계</td><td class="dd-num">${sumV.toLocaleString()}</td><td class="dd-num">${totalUniq}명</td><td class="dd-num">—</td>
+    ${FACS.map(f=>`<td class="dd-num">${years.reduce((s,y)=>s+cohortData[y].facs[f],0)}</td>`).join('')}
+    <td class="dd-num">${sumT.toLocaleString()}</td><td></td></tr>`;
+}
+
+// ── 탭2: Top 100 개인별 분석
+let top100Filtered = [];
+
+async function loadTop100() {
+  const btn=document.getElementById('top100-load-btn');
+  btn.disabled=true; btn.textContent='⏳ 집계 중...';
+  try {
+    await loadAllRecordsForSu2();
+    buildTop100();
+    renderTop100Table(top100Data);
+    document.getElementById('top100-empty').style.display='none';
+    document.getElementById('top100-result').style.display='';
+  } catch(e){ alert('❌ 집계 실패: '+e.message); }
+  finally { btn.disabled=false; btn.textContent='🔄 재집계'; }
+}
+
+function buildTop100() {
+  const map={};
+  su2AllRecords.forEach(r=>{
+    const sid=String(r.studentId||'').trim();
+    if(!sid)return;
+    if(!map[sid]) map[sid]={sid,name:r.name||'—',dept:r.dept||'—',records:[]};
+    if(r.name) map[sid].name=r.name;
+    if(r.dept) map[sid].dept=r.dept;
+    map[sid].records.push(r);
+  });
+  top100Data=Object.values(map).map(d=>{
+    const recs=d.records;
+    const facCount={};
+    FACS.forEach(f=>{facCount[f]=recs.filter(r=>(r.facilities||[]).includes(f)).length;});
+    const dates=[...new Set(recs.map(r=>r.date))].sort();
+    const lastDate=dates[dates.length-1]||'—';
+    const favFac=FACS.reduce((a,b)=>facCount[a]>=facCount[b]?a:b);
+    return {sid:d.sid,name:d.name,dept:d.dept,visit:recs.length,facCount,lastDate,favFac,records:recs,cohort:d.sid.slice(0,4)};
+  }).sort((a,b)=>b.visit-a.visit).slice(0,100);
+}
+
+function filterTop100(){
+  const q=(document.getElementById('top100-search')?.value||'').trim().toLowerCase();
+  top100Filtered=q?top100Data.filter(d=>d.name.toLowerCase().includes(q)||d.sid.includes(q)):top100Data;
+  renderTop100Table(top100Filtered);
+}
+
+function renderTop100Table(data){
+  top100Filtered=data;
+  const FAC_ICO_LIST=['📸','🎤','🏓','💪'];
+  document.getElementById('top100-tbody').innerHTML=data.map(d=>{
+    const rank=top100Data.indexOf(d)+1;
+    const medals={1:'🥇',2:'🥈',3:'🥉'};
+    return `<tr style="cursor:pointer;" onclick="openPanel(${top100Data.indexOf(d)})" id="top100-row-${rank}">
+      <td style="text-align:center;font-size:14px;">${medals[rank]||rank}</td>
+      <td style="font-weight:700;color:var(--c1);">${d.name}</td>
+      <td style="font-family:monospace;font-size:11px;">${d.sid}</td>
+      <td style="font-size:11px;">${d.dept}</td>
+      <td class="dd-num" style="font-weight:800;font-size:14px;color:var(--c1);">${d.visit}</td>
+      ${FACS.map(f=>`<td class="dd-num" style="font-size:11px;">${d.facCount[f]||0}</td>`).join('')}
+      <td style="font-size:11px;white-space:nowrap;">${d.lastDate}</td>
+      <td><span class="fac-tag" style="font-size:10px;">${d.favFac}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function dcPanel(id){if(panelCharts[id]){panelCharts[id].destroy();delete panelCharts[id];}}
+
+function openPanel(idx){
+  const d=top100Data[idx]; const rank=idx+1;
+  document.querySelectorAll('#top100-tbody tr').forEach(r=>r.style.background='');
+  const rowEl=document.getElementById('top100-row-'+rank);
+  if(rowEl) rowEl.style.background='var(--c1l)';
+  document.getElementById('panel-empty').style.display='none';
+  document.getElementById('panel-content').style.display='';
+  document.getElementById('panel-name').textContent=d.name;
+  document.getElementById('panel-rank').textContent=rank+'위';
+  document.getElementById('panel-meta').innerHTML=`${d.sid} | ${d.cohort}학번<br>${d.dept}`;
+
+  const recs=d.records;
+  const totalFac=Object.values(d.facCount).reduce((s,v)=>s+v,0);
+  const dates=[...new Set(recs.map(r=>r.date))].sort();
+  let maxStreak=1,curSt=1;
+  for(let i=1;i<dates.length;i++){
+    const diff=(new Date(dates[i])-new Date(dates[i-1]))/86400000;
+    if(diff===1){curSt++;maxStreak=Math.max(maxStreak,curSt);}else curSt=1;
+  }
+  const byHour={};
+  recs.forEach(r=>{const t=r.entryTime||'';if(t&&t.includes(':'))byHour[t.split(':')[0]]=(byHour[t.split(':')[0]]||0)+1;});
+  const peakH=Object.entries(byHour).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('panel-stats').innerHTML=[
+    {label:'총 방문',val:d.visit+'회',c:'#2563eb'},
+    {label:'이용건수',val:totalFac+'건',c:'#10b981'},
+    {label:'최장 연속',val:maxStreak+'일',c:'#8b5cf6'},
+    {label:'선호시설',val:d.favFac,c:'#f97316'},
+    {label:'피크시간',val:peakH?peakH[0]+'시':'—',c:'#f59e0b'},
+    {label:'최근방문',val:d.lastDate.slice(5),c:'#6b7280'},
+  ].map(k=>`<div style="background:var(--surface2);border-radius:9px;padding:9px 10px;border:1px solid var(--border);">
+    <div style="font-size:16px;font-weight:800;color:${k.c};">${k.val}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:2px;">${k.label}</div>
+  </div>`).join('');
+
+  // 시설 도넛
+  dcPanel('panel-fac-chart');
+  const fCtx=document.getElementById('panel-fac-chart')?.getContext('2d');
+  if(fCtx) panelCharts['panel-fac-chart']=new Chart(fCtx,{type:'doughnut',
+    data:{labels:FACS,datasets:[{data:FACS.map(f=>d.facCount[f]),backgroundColor:FAC_C,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{
+      legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,padding:5}},
+      tooltip:{...tip},datalabels:{display:c=>c.raw>0,formatter:v=>v,color:'#fff',font:{size:10,weight:'700'}}}}});
+
+  // 월별 바
+  dcPanel('panel-month-chart');
+  const byMonth=new Array(12).fill(0);
+  recs.forEach(r=>{const m=parseInt((r.date||'').slice(5,7),10)-1;if(m>=0&&m<12)byMonth[m]++;});
+  const mCtx=document.getElementById('panel-month-chart')?.getContext('2d');
+  if(mCtx) panelCharts['panel-month-chart']=new Chart(mCtx,{type:'bar',
+    data:{labels:['1','2','3','4','5','6','7','8','9','10','11','12'].map(m=>m+'월'),
+      datasets:[{data:byMonth,backgroundColor:'#2563eb66',borderColor:'#2563eb',borderWidth:1,borderRadius:3,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...tip},datalabels:{display:false}},
+      scales:{x:{ticks:{font:{size:8}}},y:{beginAtZero:true,ticks:{font:{size:8},maxTicksLimit:4}}}}});
+
+  // 최근 이력 5건
+  const recent=[...recs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('panel-history').innerHTML=recent.map(r=>{
+    const facs=(r.facilities||[]).map(f=>`<span style="font-size:9px;background:var(--c1l);color:var(--c1);border-radius:3px;padding:1px 4px;">${f}</span>`).join(' ');
+    const bc=r.status==='퇴실완료'?'#e0ecf8':r.status==='승인완료'?'#e0f8ef':'#fff4e0';
+    const tc=r.status==='퇴실완료'?'#1a4b7a':r.status==='승인완료'?'#0f7a50':'#c07a00';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;">
+      <span style="color:var(--muted);min-width:52px;">${r.date.slice(5)}</span>
+      <div style="flex:1;">${facs}</div>
+      <span style="background:${bc};color:${tc};border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;flex-shrink:0;">${r.status}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── 초기화 ──
+window.addEventListener('DOMContentLoaded',async function(){
+  onYearChange();
+  // 승인관리 날짜 오늘로 초기화
+  const todayStr=new Date().toISOString().split('T')[0];
+  const apFrom=document.getElementById('ap-from');
+  const apTo=document.getElementById('ap-to');
+  if(apFrom)apFrom.value=todayStr;
+  if(apTo)apTo.value=todayStr;
+  // 승인관리 먼저 로드 후 렌더, summary는 백그라운드
+  // 실시간현황 날짜 오늘로 초기화
+  const rtDate=document.getElementById('rt-date');
+  if(rtDate) rtDate.value=todayStr;
+  await loadApproval(1);
+  renderRealtime(); // 실시간 현황 초기 렌더 (approval 데이터 기반)
+  loadSummary(); // 백그라운드 (await 없음)
+  populateStatDeptSels();
+  // 통계 필터 날짜 기본값: 학년도 전체
+  const y0=YR[curYear];
+  ['ov','ss','sf','st','sd'].forEach(p=>{
+    const fe2=document.getElementById(p+'-from');
+    const te2=document.getElementById(p+'-to');
+    if(fe2&&!fe2.value)fe2.value=y0.start;
+    if(te2&&!te2.value)te2.value=y0.end;
+  });
+  ['ov','ss','sf','st'].forEach(p=>{
+    const fe=document.getElementById(p+'-from');
+    const te=document.getElementById(p+'-to');
+    if(fe)fe.value=y0.start;
+    if(te)te.value=y0.end;
+  });
+  renderOverview();
+  startAutoRefresh(); // 자동갱신 시작
+  // 학번 조회 학년도 범위 표시
+  const suRangeEl=document.getElementById('su-range-info');
+  if(suRangeEl) suRangeEl.textContent='조회 범위: '+y0.start+' ~ '+y0.end;
+});
+</script>
+</body>
+</html>
