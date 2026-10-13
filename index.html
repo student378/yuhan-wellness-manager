@@ -386,6 +386,7 @@ tr:hover td{background:#f8faff;}
       </div>
       <button class="btn-rf" onclick="refreshData()">🔄 새로고침</button>
       <div class="adm-badge">👤 관리자</div>
+      <button class="btn-rf" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
   <div class="pc">
@@ -831,6 +832,18 @@ tr:hover td{background:#f8faff;}
   </div><!-- /pc -->
 </main>
 
+<!-- 로그인 -->
+<div id="login-ov" style="display:flex;position:fixed;inset:0;background:#0f172a;z-index:5000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:18px;padding:32px 28px;width:340px;max-width:92vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div style="font-size:34px;">🏋️</div>
+    <div style="font-size:16px;font-weight:800;margin:8px 0 4px;">웰니스스테이션 관리자</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:16px;">관리자 비밀번호를 입력하세요</div>
+    <input type="password" id="login-pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit;margin-bottom:10px;">
+    <div id="login-msg" style="min-height:18px;font-size:12px;color:#ef4444;margin-bottom:8px;"></div>
+    <button id="login-btn" onclick="doLogin()" style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;">로그인</button>
+  </div>
+</div>
+
 <!-- 삭제 모달 -->
 <div class="mo" id="mo-del">
   <div class="mb"><h3>⚠️ 삭제 확인</h3><p>이 신청 이력을 삭제하시겠습니까?<br>삭제된 데이터는 복구할 수 없습니다.</p>
@@ -935,10 +948,10 @@ const FAC_CL=['#dbeafe','#ffedd5','#d1fae5','#fef3c7'];
 const DAYS=['일','월','화','수','목','금','토'];
 const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const SERIES_MAP={
-  '공학':['기계시스템전공','전기공학전공','전자공학전공','산업안전전공','산업디자인전공','컴퓨터소프트웨어전공','소방설비안전전공','컴퓨터정보통신전공','IT비즈니스전공','인공지능전공','게임콘텐츠전공','자유전공학과','기계시스템전공(심화)'],
-  '예체능':['시각디자인전공','애니메이션웹툰전공','패션디자인전공','실내건축전공','광고미디어전공','방송영상전공','방송문예창작전공','방송연예전공','패션디자인전공(심화)','실내건축전공(전공심화)'],
-  '자연과학':['식품영양학과','호텔조리전공','유한바이오제약전공','피부메이크업전공','뷰티화장품전공','카페베이커리전공','유한생명화공전공','반려동물보건학과','스포츠재활전공','작업치료과','응급구조과','반려동물산업전공','치위생과','유한바이오제약전공(심화)'],
-  '인문사회':['호텔관광전공','일본비즈니스전공','경영정보전공','보건의료행정학과','사회복지전공','아동보육전공','세무회계전공','항공경영전공','항공서비스학과','보건의료행정학과(심화)','사회복지전공(심화)']
+  '공학':['기계시스템전공','전기공학전공','전자공학전공','산업안전전공','산업디자인전공','컴퓨터소프트웨어전공','소방설비안전전공','컴퓨터정보통신전공','IT비즈니스전공','인공지능전공','게임콘텐츠전공','자유전공학과','기계시스템전공(심화)','기계시스템공학과(심화)','컴퓨터공학과(심화)'],
+  '예체능':['시각디자인전공','애니메이션웹툰전공','패션디자인전공','실내건축전공','광고미디어전공','방송영상전공','방송문예창작전공','방송연예전공','패션디자인전공(심화)','실내건축전공(전공심화)','시각디자인학과(심화)','패션디자인학과(심화)','실내건축학과(심화)'],
+  '자연과학':['식품영양학과','호텔조리전공','유한바이오제약전공','피부메이크업전공','뷰티화장품전공','카페베이커리전공','유한생명화공전공','반려동물보건학과','스포츠재활전공','작업치료과','응급구조과','반려동물산업전공','치위생과','유한바이오제약전공(심화)','유한바이오제약학과(심화)'],
+  '인문사회':['호텔관광전공','일본비즈니스전공','경영정보전공','보건의료행정학과','사회복지전공','아동보육전공','세무회계전공','항공경영전공','항공서비스학과','보건의료행정학과(심화)','사회복지전공(심화)','사회복지학과(심화)']
 };
 const YR={'2025':{label:'2025학년도',start:'2025-03-01',end:'2026-02-28'},
           '2026':{label:'2026학년도',start:'2026-03-01',end:'2027-02-27'},
@@ -948,7 +961,48 @@ const PT={'overview':'📊 전체 현황','realtime':'🟢 실시간 이용현�
 let curYear='2026', summary={}, apprRecords=[], apprTotal=0, apprPage=1, apprPageSize=100,
     charts={}, statusF='all', delId=null, exitId=null,
     sdSortKey='visit', sdSortAsc=false, sdSeriesF='',
-    apprLoading=false;
+    apprLoading=false, apprCacheKey='', adminToken='', appStarted=false;
+try{adminToken=sessionStorage.getItem('wl_token')||'';}catch(e){}
+
+// 한국 로컬 날짜 (UTC 변환 방식은 오전 9시 이전에 전날이 나오는 문제 방지)
+function localDate(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+// HTML 이스케이프 (이름·학과 등 신청자 입력값을 innerHTML 에 넣을 때 필수)
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ── 로그인 ──
+function showLogin(msg){
+  const o=document.getElementById('login-ov');if(!o)return;
+  o.style.display='flex';
+  const m=document.getElementById('login-msg');if(m)m.textContent=msg||'';
+  const pw=document.getElementById('login-pw');if(pw){pw.value='';setTimeout(()=>pw.focus(),50);}
+  hideLoad();
+}
+function hideLogin(){const o=document.getElementById('login-ov');if(o)o.style.display='none';}
+function onAuthLost(msg){
+  adminToken='';try{sessionStorage.removeItem('wl_token');}catch(e){}
+  stopAutoRefresh();
+  appStarted=false;
+  showLogin(msg||'로그인이 필요합니다.');
+}
+async function doLogin(){
+  const pw=document.getElementById('login-pw').value;
+  if(!pw){document.getElementById('login-msg').textContent='비밀번호를 입력하세요.';return;}
+  const btn=document.getElementById('login-btn');btn.disabled=true;btn.textContent='확인 중...';
+  try{
+    const res=await fetch(SCRIPT_URL+'?action=adminLogin&pw='+encodeURIComponent(pw),{redirect:'follow'});
+    const data=JSON.parse(await res.text());
+    if(!data.success){document.getElementById('login-msg').textContent=data.message||'로그인 실패';return;}
+    adminToken=data.token;try{sessionStorage.setItem('wl_token',adminToken);}catch(e){}
+    hideLogin();
+    await appInit();
+  }catch(e){document.getElementById('login-msg').textContent='서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.';}
+  finally{btn.disabled=false;btn.textContent='로그인';}
+}
+async function adminLogout(){
+  try{await fetch(SCRIPT_URL+'?action=adminLogout&token='+encodeURIComponent(adminToken),{redirect:'follow'});}catch(e){}
+  adminToken='';try{sessionStorage.removeItem('wl_token');}catch(e){}
+  location.reload();
+}
 
 // ── 로딩 ──
 function showLoad(msg){let el=document.getElementById('ld-ov');if(!el){el=document.createElement('div');el.id='ld-ov';el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:inherit;';el.innerHTML='<div style="font-size:36px">⏳</div><div id="ld-msg" style="font-size:14px;font-weight:700;color:#1e2d52;"></div>';document.body.appendChild(el);}document.getElementById('ld-msg').textContent=msg||'처리 중...';el.style.display='flex';}
@@ -956,6 +1010,7 @@ function hideLoad(){const el=document.getElementById('ld-ov');if(el)el.style.dis
 
 // ── API ──
 async function apiFetch(params){
+  if(params.action!=='adminLogin'&&adminToken)params=Object.assign({},params,{token:adminToken});
   const qs=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(String(v))).join('&');
   const res=await fetch(SCRIPT_URL+'?'+qs, {redirect:'follow'});
   const text=await res.text();
@@ -964,13 +1019,14 @@ async function apiFetch(params){
   let data;
   try{data=JSON.parse(text);}
   catch(e){throw new Error('파싱 오류: '+text.substring(0,120));}
+  if(data.auth===false){onAuthLost('로그인이 필요합니다. (세션 만료)');throw new Error(data.message||'로그인이 필요합니다.');}
   if(!data.success)throw new Error(data.message||'서버 오류');
   return data;
 }
 
 // 통계용 요약 데이터 로드 (경량)
 let summaryCache={}, summaryCacheKey='', summaryCacheAt=0;
-async function loadSummary(force){
+async function loadSummary(force,silent){
   const y=YR[curYear];
   const cKey=y.start+'|'+y.end;
   const now=Date.now();
@@ -978,22 +1034,22 @@ async function loadSummary(force){
   if(!force && cKey===summaryCacheKey && (now-summaryCacheAt)<300000 && summaryCacheAt>0){
     summary=summaryCache; return;
   }
-  showLoad('통계 집계 중...');
+  if(!silent)showLoad('통계 집계 중...');
   try{
     const res=await apiFetch({action:'getSummary',from:y.start,to:y.end});
     summary=res; summaryCache=res; summaryCacheKey=cKey; summaryCacheAt=now;
     calcUniqInByDept(summary);  // byDept.uniq 보정
     populateStatDeptSels();     // 학과 드롭다운 갱신
     updateDeptSel();            // 승인관리 학과 드롭다운도 갱신
-  }catch(e){alert('❌ 통계 로드 실패\n'+e.message);summary={};}
-  finally{hideLoad();}
+  }catch(e){if(!silent){alert('❌ 통계 로드 실패\n'+e.message);summary={};}}
+  finally{if(!silent)hideLoad();}
 }
 
 // 승인관리용 페이지 로드 (서버사이드 필터+페이지네이션)
-async function loadApproval(page, force){
+async function loadApproval(page, force, silent){
   if(apprLoading && !force)return;
   apprLoading=false; // force면 이전 로딩 취소
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=localDate();
   const from=document.getElementById('ap-from')?.value||todayStr;
   const to=document.getElementById('ap-to')?.value||todayStr;
   const fac=document.getElementById('ap-fac')?.value||'';
@@ -1005,15 +1061,15 @@ async function loadApproval(page, force){
   if(!force && cacheKey===apprCacheKey && apprRecords.length>0){return;}
   apprLoading=true;
   apprCacheKey=cacheKey;
-  showLoad('데이터 로드 중...');
+  if(!silent)showLoad('데이터 로드 중...');
   try{
     const res=await apiFetch({action:'getAll',from,to,status,fac,dept,search:srch,pageNum:page||1,pageSize:apprPageSize});
     apprRecords=res.records||[];
     apprTotal=res.total||0;
     apprPage=res.pageNum||1;
     updateDeptSel();
-  }catch(e){alert('❌ 로드 실패\n'+e.message);apprRecords=[];apprCacheKey='';}
-  finally{hideLoad();apprLoading=false;}
+  }catch(e){if(!silent){alert('❌ 로드 실패\n'+e.message);apprRecords=[];}apprCacheKey='';}
+  finally{if(!silent)hideLoad();apprLoading=false;}
 }
 
 async function refreshData(){
@@ -1029,21 +1085,21 @@ async function refreshData(){
 // ══════════════════════════════════════
 let realtimeData = {pending:[], using:[], exited:[]};
 
-async function loadRealtime(){
+async function loadRealtime(silent){
   const dateEl = document.getElementById('rt-date');
-  const today  = new Date().toISOString().split('T')[0];
+  const today  = localDate();
   const dt     = dateEl?.value || today;
   if(dateEl && !dateEl.value) dateEl.value = today;
-  showLoad('실시간 현황 로딩...');
+  if(silent!==true)showLoad('실시간 현황 로딩...');
   try{
-    const res = await apiFetch({action:'getAll', from:dt, to:dt, pageSize:500, pageNum:1});
+    const res = await apiFetch({action:'getAll', from:dt, to:dt, pageSize:2000, pageNum:1});
     const recs = res.records || [];
     realtimeData.pending = recs.filter(r=>r.status==='승인대기');
     realtimeData.using   = recs.filter(r=>r.status==='승인완료');
     realtimeData.exited  = recs.filter(r=>r.status==='퇴실완료');
     renderRealtime();
   }catch(e){console.error('실시간 로딩 실패',e);}
-  finally{hideLoad();}
+  finally{if(silent!==true)hideLoad();}
 }
 
 function renderRealtime(){
@@ -1097,9 +1153,9 @@ function renderRealtime(){
           const mins  = entry!=='-' ? Math.floor((Date.now()-new Date().setHours(...entry.split(':').map(Number),0))/60000) : null;
           const dur   = mins!==null&&mins>=0 ? (mins>=60?Math.floor(mins/60)+'시간 '+(mins%60)+'분':mins+'분') : '-';
           return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9;">
-            <span style="font-size:12px;font-weight:700;color:${c};min-width:42px;">${entry}</span>
-            <span style="font-size:12px;color:#374151;font-weight:600;">${r.name}</span>
-            <span style="font-size:11px;color:#64748b;">(${r.dept||''})</span>
+            <span style="font-size:12px;font-weight:700;color:${c};min-width:42px;">${esc(entry)}</span>
+            <span style="font-size:12px;color:#374151;font-weight:600;">${esc(r.name)}</span>
+            <span style="font-size:11px;color:#64748b;">(${esc(r.dept||'')})</span>
             <span style="font-size:11px;color:#6366f1;font-weight:600;margin-left:auto;">${dur}</span>
           </div>`;
         }).join('');
@@ -1174,9 +1230,9 @@ function renderRealtime(){
         const mins  = entry!=='-' ? Math.floor((Date.now()-new Date().setHours(...entry.split(':').map(Number),0))/60000) : null;
         const dur   = mins!==null&&mins>=0 ? (mins>=60?Math.floor(mins/60)+'시간 '+(mins%60)+'분':mins+'분') : '-';
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f8fafc;border-radius:8px;margin-top:6px;">
-          <span style="font-size:13px;font-weight:700;color:#059669;min-width:42px;">${entry}</span>
-          <span style="font-size:13px;font-weight:700;">${r.name}</span>
-          <span style="font-size:11px;color:#64748b;">(${r.dept||''})</span>
+          <span style="font-size:13px;font-weight:700;color:#059669;min-width:42px;">${esc(entry)}</span>
+          <span style="font-size:13px;font-weight:700;">${esc(r.name)}</span>
+          <span style="font-size:11px;color:#64748b;">(${esc(r.dept||'')})</span>
           <span style="font-size:11px;color:#6366f1;font-weight:600;margin-left:auto;">${dur}</span>
         </div>`;
       }).join('');
@@ -1185,8 +1241,8 @@ function renderRealtime(){
       // 퇴실완료: 최대 10명, 스크롤
       const exitedRows = rmExited.slice(0, ROOM_MAX).map(r=>`
         <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;margin-top:4px;opacity:.6;">
-          <span style="font-size:12px;color:#94a3b8;">${r.entryTime||'-'} ~ ${r.exitTime||'-'}</span>
-          <span style="font-size:12px;color:#374151;flex:1;">${r.name}</span>
+          <span style="font-size:12px;color:#94a3b8;">${esc(r.entryTime||'-')} ~ ${esc(r.exitTime||'-')}</span>
+          <span style="font-size:12px;color:#374151;flex:1;">${esc(r.name)}</span>
           <span style="font-size:11px;padding:1px 6px;background:#ede9fe;color:#7c3aed;border-radius:4px;font-weight:700;">퇴실완료</span>
         </div>`).join('');
       const exitedMore = rmExited.length - ROOM_MAX;
@@ -1268,14 +1324,15 @@ async function autoRefresh(){
   // 승인관리 30초 갱신
   if(now-lastApprRefresh>=APPR_INTERVAL){
     apprCacheKey='';
-    await loadApproval(apprPage,true);
+    await loadApproval(apprPage,true,true);
+    if(pageId==='realtime') await loadRealtime(true);
     lastApprRefresh=now;
     apprUpdated=true;
   }
   // 통계/현황 5분 갱신
   if(now-lastSummaryRefresh>=SUMMARY_INTERVAL){
     summaryCacheAt=0;
-    await loadSummary(true);
+    await loadSummary(true,true);
     lastSummaryRefresh=now;
     summaryUpdated=true;
   }
@@ -1284,7 +1341,7 @@ async function autoRefresh(){
   if(pageId==='approval' && apprUpdated){
     renderApproval();
   } else if(pageId==='realtime' && apprUpdated){
-    renderRealtime();
+    /* loadRealtime(true) 가 이미 화면을 갱신함 */
   } else if(pageId!=='approval' && pageId!=='realtime' && (apprUpdated||summaryUpdated)){
     renderPage(pageId);
   }
@@ -1505,20 +1562,20 @@ function renderApproval(){
     const bc=r.status==='승인완료'?'approved':r.status==='퇴실완료'?'exited':r.status==='거부'?'rejected':'pending';
     const tr=tb.insertRow();
     let td;
-    td=tr.insertCell();td.innerHTML='<span class="id-badge">'+rid+'</span>';
+    td=tr.insertCell();td.innerHTML='<span class="id-badge">'+esc(rid)+'</span>';
     td=tr.insertCell();td.style.whiteSpace='nowrap';td.textContent=r.date;
     td=tr.insertCell();td.style.fontSize='12px';td.textContent=r.dept||'-';
     td=tr.insertCell();td.textContent=r.name||'-';
     td=tr.insertCell();td.style.fontFamily='monospace';td.textContent=r.studentId||'-';
     FACS.forEach(function(f2){td=tr.insertCell();td.style.textAlign='center';td.innerHTML=(r.facilities||[]).includes(f2)?'<span style="color:var(--c1);font-size:15px;font-weight:700">✓</span>':'<span style="color:#ddd">—</span>';});
     td=tr.insertCell();td.textContent=r.entryTime||'-';
-    td=tr.insertCell();td.innerHTML=r.exitTime?r.exitTime:'<span style="color:#ddd;font-size:11px">미입력</span>';
+    td=tr.insertCell();td.innerHTML=r.exitTime?esc(r.exitTime):'<span style="color:#ddd;font-size:11px">미입력</span>';
     td=tr.insertCell();td.textContent=r.duration||'-';
     td=tr.insertCell();
     // 상태 뱃지
     const statusWrap=document.createElement('div');
     statusWrap.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
-    statusWrap.innerHTML='<span class="badge '+bc+'">'+r.status+'</span>';
+    statusWrap.innerHTML='<span class="badge '+bc+'">'+esc(r.status)+'</span>';
     // ROOM 뱃지 (배정된 경우)
     const roomVal=(r.room||'').trim();
     const roomBadge=document.createElement('span');
@@ -1693,8 +1750,6 @@ function renderFacility(){
   const byFac=summary.byFac||{};
   const byDept=summary.byDept||{};
   const facCnts=FACS.map(f=>byFac[f]||0);
-  // 시설별 학생수 (byDept에서 역산)
-  const facUniq=FACS.map(f=>{let s=new Set();Object.values(byDept).forEach(d=>{if(d.facs&&d.facs[f]>0)s.add(f+'-'+Math.random());});return Object.values(byDept).filter(d=>d.facs&&d.facs[f]>0).reduce((sum,d)=>sum+d.uniq,0);});
   document.getElementById('sf-insight').innerHTML=
     FACS.map((f,i)=>'<div class="ins"><div class="ins-ico">'+FAC_ICO[i]+'</div><div class="ins-title">'+f+'</div><div class="ins-val" style="color:'+FAC_C[i]+'">'+facCnts[i].toLocaleString()+'건</div><div class="ins-desc">총 이용건수</div></div>').join('');
   mkBar('ch-sf-bar',FACS,[{label:'이용건수',data:facCnts,color:FAC_C}],{merged:true});
@@ -1712,7 +1767,7 @@ function renderFacility(){
   const mk=Object.keys(mm).sort((a,b)=>mm[b]-mm[a]).slice(0,8);
   if(mk.length)mkBar('ch-sf-multi',mk,[{label:'이용건수',data:mk.map(k=>mm[k]),color:'#8b5cf6'}],{horiz:true});
   // 월별 추이
-  mkLine('ch-sf-line',MONTHS,FACS.map((f,i)=>({label:f,data:(summary.byMonth||new Array(12).fill(0)).map(v=>Math.round(v*facCnts[i]/(totalItems()||1))),color:FAC_C[i]})));
+  mkLine('ch-sf-line',MONTHS,FACS.map((f,i)=>({label:f,data:(summary.byFacMonth||{})[f]||new Array(12).fill(0),color:FAC_C[i]})));
 }
 
 // ══════════════════════════════════════
@@ -1738,12 +1793,12 @@ function renderTime(){
   const facCnts=FACS.map(f=>(summary.byFac||{})[f]||0);
   const totFac=totalItems()||1;
   dc('ch-st-stacked');const ctx=document.getElementById('ch-st-stacked')?.getContext('2d');if(ctx){
-    charts['ch-st-stacked']=new Chart(ctx,{type:'bar',data:{labels:DAYS.map(d=>d+'요일'),datasets:FACS.map((f,i)=>({label:f,data:byDay.map(v=>Math.round(v*facCnts[i]/totFac)),backgroundColor:FAC_C[i],borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:10}},tooltip:{...tip,callbacks:{title:items=>items[0].label,label:c=>c.dataset.label+': '+c.raw}},datalabels:{display:false}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}
+    charts['ch-st-stacked']=new Chart(ctx,{type:'bar',data:{labels:DAYS.map(d=>d+'요일'),datasets:FACS.map((f,i)=>({label:f,data:(summary.byFacDay&&summary.byFacDay[f])||new Array(7).fill(0),backgroundColor:FAC_C[i],borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:10}},tooltip:{...tip,callbacks:{title:items=>items[0].label,label:c=>c.dataset.label+': '+c.raw}},datalabels:{display:false}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});}
   // 시간대별
   const hours=Array.from({length:10},(_,i)=>i+9);
   mkBar('ch-st-hour',hours.map(h=>h+'시'),[{label:'이용건수',data:hours.map(h=>byHour[String(h)]||0),color:'#8b5cf6'}]);
   // 월별 추이
-  mkLine('ch-st-combo',MONTHS,FACS.map((f,i)=>({label:f,data:byMonth.map(v=>Math.round(v*facCnts[i]/totFac)),color:FAC_C[i]})));
+  mkLine('ch-st-combo',MONTHS,FACS.map((f,i)=>({label:f,data:(summary.byFacMonth&&summary.byFacMonth[f])||new Array(12).fill(0),color:FAC_C[i]})));
 }
 
 // ══════════════════════════════════════
@@ -1754,7 +1809,7 @@ function renderDept(){
   const sorted=Object.entries(byDept).sort((a,b)=>b[1].visit-a[1].visit).slice(0,30);
   const maxV=sorted[0]?.[1].visit||1;
   const dl=document.getElementById('dept-list');
-  dl.innerHTML=sorted.map((e,i)=>'<div class="dept-row-item"><span class="dr-rank">'+(i+1)+'</span><span class="dr-name">'+e[0]+'</span><div class="dr-bar"><div class="dr-bar-fill" style="width:'+(e[1].visit/maxV*100)+'%"></div></div><span class="dr-v">'+e[1].visit+'</span><span class="dr-u">'+e[1].uniq+'명</span></div>').join('');
+  dl.innerHTML=sorted.map((e,i)=>'<div class="dept-row-item"><span class="dr-rank">'+(i+1)+'</span><span class="dr-name">'+esc(e[0])+'</span><div class="dr-bar"><div class="dr-bar-fill" style="width:'+(e[1].visit/maxV*100)+'%"></div></div><span class="dr-v">'+e[1].visit+'</span><span class="dr-u">'+e[1].uniq+'명</span></div>').join('');
   // 계열별 집계
   const series={};
   Object.entries(byDept).forEach(([dept,d])=>{const s=getSeries(dept);series[s]=(series[s]||0)+d.total;});
@@ -1762,7 +1817,7 @@ function renderDept(){
   const serColors=['#2563eb','#f97316','#10b981','#f59e0b'];
   mkBar('ch-dept-series',serSorted.map(e=>e[0]),[{label:'이용건수',data:serSorted.map(e=>e[1]),color:serColors}],{horiz:true,merged:true});
   const tot=serSorted.reduce((s,e)=>s+e[1],0);
-  document.getElementById('series-rows').innerHTML=serSorted.map((e,i)=>'<div class="dr-row"><div class="dr-lbl"><div class="dr-dot" style="background:'+serColors[i%serColors.length]+'"></div>'+e[0]+'</div><span class="dr-pct">'+(tot?(e[1]/tot*100).toFixed(1):0)+'%</span><span class="dr-cnt">'+e[1]+'건</span></div>').join('');
+  document.getElementById('series-rows').innerHTML=serSorted.map((e,i)=>'<div class="dr-row"><div class="dr-lbl"><div class="dr-dot" style="background:'+serColors[i%serColors.length]+'"></div>'+esc(e[0])+'</div><span class="dr-pct">'+(tot?(e[1]/tot*100).toFixed(1):0)+'%</span><span class="dr-cnt">'+e[1]+'건</span></div>').join('');
 }
 
 // ══════════════════════════════════════
@@ -1848,7 +1903,7 @@ function renderStatDetail(){
   // tbody
   const tb=document.getElementById('sd-tbody');
   tb.innerHTML=filtered.map((d,i)=>'<tr><td>'+
-    (i<3?['🥇','🥈','🥉'][i]:i+1)+'</td><td style="font-weight:600">'+d.dept+'</td><td><span style="background:var(--c1l);color:var(--c1);border-radius:8px;padding:2px 7px;font-size:10px;font-weight:700">'+d.series+'</span></td>'+
+    (i<3?['🥇','🥈','🥉'][i]:i+1)+'</td><td style="font-weight:600">'+esc(d.dept)+'</td><td><span style="background:var(--c1l);color:var(--c1);border-radius:8px;padding:2px 7px;font-size:10px;font-weight:700">'+d.series+'</span></td>'+
     '<td class="dd-num">'+d.visit+'</td><td class="dd-num">'+d.uniqSize+'</td>'+
     FACS.map((_,fi)=>'<td class="dd-num">'+d.facs[fi]+'</td>').join('')+
     '<td class="dd-num" style="font-weight:700;color:var(--c1)">'+d.total+'</td>'+
@@ -1967,7 +2022,8 @@ function filterSummaryByDept(src, deptF, seriesF) {
   const newByDay    = [0,0,0,0,0,0,0];
   const newByMonth  = new Array(12).fill(0);
   const newByHour   = {};
-  const newByHourFac= {};
+  const newByHourFac= {}, newByFacDay={}, newByFacMonth={};
+  FACS.forEach(f=>{newByHourFac[f]={};newByFacDay[f]=[0,0,0,0,0,0,0];newByFacMonth[f]=new Array(12).fill(0);});
 
   Object.entries(src.byDept||{}).forEach(([dept,d]) => {
     const series = getSeries(dept);
@@ -1987,16 +2043,10 @@ function filterSummaryByDept(src, deptF, seriesF) {
     Object.entries(d.byHour||{}).forEach(([h,v]) => {
       newByHour[h] = (newByHour[h]||0) + v;
     });
-  });
-
-  // byHourFac 재계산 (시설 비율로 근사)
-  FACS.forEach(f => {
-    newByHourFac[f] = {};
-    const facTotal = newByFac[f]||0;
-    const srcTotal = (src.byFac||{})[f]||1;
-    const ratio = facTotal / srcTotal;
-    Object.entries(src.byHourFac&&src.byHourFac[f]||{}).forEach(([h,v]) => {
-      newByHourFac[f][h] = Math.round(v * ratio);
+    FACS.forEach(f => {
+      ((d.byFacDay||{})[f]||[]).forEach((v,i) => { newByFacDay[f][i] += v; });
+      ((d.byFacMonth||{})[f]||[]).forEach((v,i) => { newByFacMonth[f][i] += v; });
+      Object.entries((d.byHourFac||{})[f]||{}).forEach(([h,v]) => { newByHourFac[f][h] = (newByHourFac[f][h]||0) + v; });
     });
   });
 
@@ -2011,6 +2061,8 @@ function filterSummaryByDept(src, deptF, seriesF) {
     byMonth:     newByMonth,
     byHour:      newByHour,
     byHourFac:   newByHourFac,
+    byFacDay:    newByFacDay,
+    byFacMonth:  newByFacMonth,
   };
 }
 
@@ -2137,7 +2189,7 @@ function renderDbSlide(idx) {
     document.getElementById('db-dept-list').innerHTML=sorted.map((e,i)=>`
       <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);">
         <span style="font-family:monospace;font-size:10px;color:rgba(255,255,255,.3);width:18px;">${i+1}</span>
-        <span style="flex:1;font-size:11px;color:rgba(255,255,255,.8);">${e[0]}</span>
+        <span style="flex:1;font-size:11px;color:rgba(255,255,255,.8);">${esc(e[0])}</span>
         <div style="width:80px;height:5px;background:rgba(255,255,255,.08);border-radius:3px;flex-shrink:0;">
           <div style="width:${(e[1].total/maxV*100).toFixed(0)}%;height:100%;border-radius:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);"></div>
         </div>
@@ -2152,7 +2204,7 @@ function renderDbSlide(idx) {
     document.getElementById('db-series-rows').innerHTML=serSorted.map((e,i)=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px;margin-bottom:4px;">
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.7);">
-          <div style="width:8px;height:8px;border-radius:2px;background:${serColors[i%serColors.length]};flex-shrink:0;"></div>${e[0]}
+          <div style="width:8px;height:8px;border-radius:2px;background:${serColors[i%serColors.length]};flex-shrink:0;"></div>${esc(e[0])}
         </div>
         <span style="font-family:monospace;font-size:11px;font-weight:700;color:rgba(255,255,255,.8);">${tot?(e[1]/tot*100).toFixed(1):0}% (${e[1]}건)</span>
       </div>`).join('');
@@ -2263,9 +2315,16 @@ async function loadAllRecordsForSu2(force) {
   showLoad('전체 데이터 집계 중...');
   try {
     const from = '2010-01-01';
-    const to   = new Date().toISOString().split('T')[0];
-    const res  = await apiFetch({action:'getAll', from, to, pageSize:5000, pageNum:1});
-    su2AllRecords = res.records || [];
+    const to   = localDate();
+    const out = []; let page = 1, total = Infinity;
+    while (out.length < total) {
+      const res = await apiFetch({action:'getAll', from, to, pageSize:1000, pageNum:page});
+      total = res.total || 0;
+      const recs = res.records || [];
+      if (!recs.length) break;
+      out.push(...recs); page++;
+    }
+    su2AllRecords = out.filter(r => r.status !== '거부');   // 거부 건은 이용으로 집계하지 않음
     su2Loaded = true;
     return su2AllRecords;
   } finally { hideLoad(); }
@@ -2352,7 +2411,7 @@ function renderCohort() {
     const barW=Math.round(d.visit/maxV*100);
     const medals=['🥇','🥈','🥉'];
     return `<tr>
-      <td style="font-weight:700;">${i<3?medals[i]:i+1} <span style="background:var(--c1l);color:var(--c1);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;">${y}학번</span></td>
+      <td style="font-weight:700;">${i<3?medals[i]:i+1} <span style="background:var(--c1l);color:var(--c1);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;">${esc(y)}학번</span></td>
       <td class="dd-num">${d.visit.toLocaleString()}</td>
       <td class="dd-num">${uniq}명</td>
       <td class="dd-num" style="color:var(--c2);font-weight:700;">${avg}회</td>
@@ -2422,13 +2481,13 @@ function renderTop100Table(data){
     const medals={1:'🥇',2:'🥈',3:'🥉'};
     return `<tr style="cursor:pointer;" onclick="openPanel(${top100Data.indexOf(d)})" id="top100-row-${rank}">
       <td style="text-align:center;font-size:14px;">${medals[rank]||rank}</td>
-      <td style="font-weight:700;color:var(--c1);">${d.name}</td>
-      <td style="font-family:monospace;font-size:11px;">${d.sid}</td>
-      <td style="font-size:11px;">${d.dept}</td>
+      <td style="font-weight:700;color:var(--c1);">${esc(d.name)}</td>
+      <td style="font-family:monospace;font-size:11px;">${esc(d.sid)}</td>
+      <td style="font-size:11px;">${esc(d.dept)}</td>
       <td class="dd-num" style="font-weight:800;font-size:14px;color:var(--c1);">${d.visit}</td>
       ${FACS.map(f=>`<td class="dd-num" style="font-size:11px;">${d.facCount[f]||0}</td>`).join('')}
-      <td style="font-size:11px;white-space:nowrap;">${d.lastDate}</td>
-      <td><span class="fac-tag" style="font-size:10px;">${d.favFac}</span></td>
+      <td style="font-size:11px;white-space:nowrap;">${esc(d.lastDate)}</td>
+      <td><span class="fac-tag" style="font-size:10px;">${esc(d.favFac)}</span></td>
     </tr>`;
   }).join('');
 }
@@ -2444,7 +2503,7 @@ function openPanel(idx){
   document.getElementById('panel-content').style.display='';
   document.getElementById('panel-name').textContent=d.name;
   document.getElementById('panel-rank').textContent=rank+'위';
-  document.getElementById('panel-meta').innerHTML=`${d.sid} | ${d.cohort}학번<br>${d.dept}`;
+  document.getElementById('panel-meta').innerHTML=`${esc(d.sid)} | ${esc(d.cohort)}학번<br>${esc(d.dept)}`;
 
   const recs=d.records;
   const totalFac=Object.values(d.facCount).reduce((s,v)=>s+v,0);
@@ -2494,22 +2553,23 @@ function openPanel(idx){
   // 최근 이력 5건
   const recent=[...recs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   document.getElementById('panel-history').innerHTML=recent.map(r=>{
-    const facs=(r.facilities||[]).map(f=>`<span style="font-size:9px;background:var(--c1l);color:var(--c1);border-radius:3px;padding:1px 4px;">${f}</span>`).join(' ');
+    const facs=(r.facilities||[]).map(f=>`<span style="font-size:9px;background:var(--c1l);color:var(--c1);border-radius:3px;padding:1px 4px;">${esc(f)}</span>`).join(' ');
     const bc=r.status==='퇴실완료'?'#e0ecf8':r.status==='승인완료'?'#e0f8ef':'#fff4e0';
     const tc=r.status==='퇴실완료'?'#1a4b7a':r.status==='승인완료'?'#0f7a50':'#c07a00';
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;">
-      <span style="color:var(--muted);min-width:52px;">${r.date.slice(5)}</span>
+      <span style="color:var(--muted);min-width:52px;">${esc(r.date.slice(5))}</span>
       <div style="flex:1;">${facs}</div>
-      <span style="background:${bc};color:${tc};border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;flex-shrink:0;">${r.status}</span>
+      <span style="background:${bc};color:${tc};border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;flex-shrink:0;">${esc(r.status)}</span>
     </div>`;
   }).join('');
 }
 
 // ── 초기화 ──
-window.addEventListener('DOMContentLoaded',async function(){
+async function appInit(){
+  if(appStarted)return; appStarted=true;
   onYearChange();
   // 승인관리 날짜 오늘로 초기화
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=localDate();
   const apFrom=document.getElementById('ap-from');
   const apTo=document.getElementById('ap-to');
   if(apFrom)apFrom.value=todayStr;
@@ -2519,7 +2579,7 @@ window.addEventListener('DOMContentLoaded',async function(){
   const rtDate=document.getElementById('rt-date');
   if(rtDate) rtDate.value=todayStr;
   await loadApproval(1);
-  renderRealtime(); // 실시간 현황 초기 렌더 (approval 데이터 기반)
+  await loadRealtime(true); // 실시간 현황 초기 로드
   loadSummary(); // 백그라운드 (await 없음)
   populateStatDeptSels();
   // 통계 필터 날짜 기본값: 학년도 전체
@@ -2541,6 +2601,14 @@ window.addEventListener('DOMContentLoaded',async function(){
   // 학번 조회 학년도 범위 표시
   const suRangeEl=document.getElementById('su-range-info');
   if(suRangeEl) suRangeEl.textContent='조회 범위: '+y0.start+' ~ '+y0.end;
+}
+
+// ── 시작: 저장된 로그인 토큰이 유효하면 바로 시작, 아니면 로그인 창 ──
+window.addEventListener('DOMContentLoaded',async function(){
+  if(adminToken){
+    try{ await apiFetch({action:'checkToken'}); hideLogin(); await appInit(); return; }catch(e){}
+  }
+  showLogin();
 });
 </script>
 </body>
